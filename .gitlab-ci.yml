@@ -13,13 +13,13 @@ install:
   stage: .pre   # always first, no matter if it is listed in stages
   cache:
     - <<: *global_cache_node_mods
-       when: on_success
-       policy: pull-push
+      when: on_success
+      policy: pull-push
     - key: ${CI_JOB_NAME}
-       paths:
-         - .node_modules/
-       when: on_success
-       policy: pull-push
+      paths:
+        - .node_modules/
+      when: on_success
+      policy: pull-push
   script:
     # define cache dir & use it npm!
     - bun i
