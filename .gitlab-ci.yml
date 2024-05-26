@@ -1,6 +1,7 @@
 stages:
   - setup
   - build
+  - packages
 
 # Variables globales
 variables:
@@ -20,13 +21,22 @@ setup:
     - source ~/.bashrc
     - bun i
 
-linux:
+build_view:
   stage: build
+  image: oven/bun
+  script:
+    - bun run build
+  artifacts:
+    paths:
+      - build
+    expire_in: 1 hour
+
+linux:
+  stage: packages
   image: rust:${RUST_VERSION}
   cache:
     key: tauri-cli-cache
     paths:
-      - ${CARGO_BIN_PATH}/tauri
       - ${NODE_CACHE_PATH}
   script:
     - apt update
@@ -39,12 +49,11 @@ linux:
       - target/release/bundle/
 
 windows:
-  stage: build
+  stage: packages
   image: rust:${RUST_VERSION}
   cache:
     key: tauri-cli-cache
     paths:
-      - ${CARGO_BIN_PATH}/tauri
       - ${NODE_CACHE_PATH}
   script:
     - apt update
@@ -59,12 +68,11 @@ windows:
       - target/release/bundle/
 
 mac:
-  stage: build
+  stage: packages
   image: rust:${RUST_VERSION}
   cache:
     key: tauri-cli-cache
     paths:
-      - ${CARGO_BIN_PATH}/tauri
       - ${NODE_CACHE_PATH}
   script:
     - apt update
@@ -72,6 +80,21 @@ mac:
     - rustup target add x86_64-apple-darwin
     - cargo install tauri-cli
     - bun tauri build --target x86_64-apple-darwin
+  artifacts:
+    paths:
+      - target/release/bundle/
+
+other_linux:
+  stage: packages
+  image: ivangabriele/tauri:debian-bullseye-18
+  cache:
+    key: tauri-cli-cache
+    paths:
+      - ${NODE_CACHE_PATH}
+  script:
+    - rustup target add x86_64-unknown-linux-gnu
+    - cargo install tauri-cli
+    - bun tauri build --target x86_64-unknown-linux-gnu
   artifacts:
     paths:
       - target/release/bundle/
