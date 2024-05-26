@@ -19,7 +19,7 @@ setup:
       - ${NODE_CACHE_PATH}
   script:
     - rustup update
-    - cargo install tauri-cli --version ${TAURI_VERSION}
+    - cargo install tauri-cli
     - curl -fsSL https://bun.sh/install | bash
     - source ~/.bashrc
     - bun i
