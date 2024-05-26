@@ -7,7 +7,7 @@ RUN cargo install tauri-cli
 RUN curl -fsSL https://bun.sh/install | bash
 
 FROM base AS macos
-RUN rustup target add universal-apple-darwin
+RUN rustup target add x86_64-apple-darwin
 
 FROM base AS windows
 RUN apt install nsis lld llvm -y
