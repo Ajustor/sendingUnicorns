@@ -43,7 +43,7 @@ windows:
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - bunx tauri build --target x86_64-pc-windows-msvc
+    - cargo tauri build --target x86_64-pc-windows-msvc
   artifacts:
     paths:
       - src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
