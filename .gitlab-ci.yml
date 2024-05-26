@@ -1,5 +1,30 @@
+cache:
+    # most npm libraries will only have 1 entry for the base project deps
+    - &global_cache_node_mods
+      key:
+          files:
+              - package-lock.json
+      paths:
+          - node_modules/
+      policy: pull
+
+install:
+  image: oven/bun
+  stage: .pre   # always first, no matter if it is listed in stages
+  cache:
+    - <<: *global_cache_node_mods
+       when: on_success
+       policy: pull-push
+    - key: ${CI_JOB_NAME}
+       paths:
+         - .node_modules/
+       when: on_success
+       policy: pull-push
+  script:
+    # define cache dir & use it npm!
+    - bun i
+
 stages:
-  - install
   - build
   # - deploy
   # - linux
@@ -11,18 +36,6 @@ stages:
 variables:
   CARGO_TERM_COLOR: always
 
-install:
-  stage: install
-  image: oven/bun
-  cache:  # Cache modules in between jobs
-    key: 
-      files:
-        - package-lock.json
-    paths:
-      - node_modules
-  script:
-    - bun install
-
 linux:
   stage: build
   image: rust:latest
@@ -33,7 +46,7 @@ linux:
     - apt-get update; apt-get install -y ibwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev librsvg2-dev
     # - cargo install tauri-cli
     # - cargo-tauri build
-    - bun tauri build --target aarch64-unknown-linux-gnu
+    - cargo-tauri build --target aarch64-unknown-linux-gnu
 
   artifacts:
     paths:
@@ -63,6 +76,8 @@ macos:
   script:
     - curl -fsSL https://bun.sh/install | bash
     - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    - (echo; echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"') >> /root/.bashrc
+    - eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     - source ~/.bashrc
     - rustup target add x86_64-apple-darwin aarch64-apple-darwin
     - brew install openssl@1.1 libwebkit2gtk
