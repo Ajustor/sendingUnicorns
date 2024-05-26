@@ -1,33 +1,47 @@
 stages:
-  - linux
-  - windows
-  - macos
+  - install
+  - build
+  # - deploy
+  # - linux
+  # - windows
+  # - macos
   # - android
   # - ios
 
 variables:
   CARGO_TERM_COLOR: always
 
-linux:
-  stage: linux
+install:
+  stage: install
+  image: oven/bun
+  cache:  # Cache modules in between jobs
+    key: 
+      files:
+        - package-lock.json
+    paths:
+      - node_modules
+  script:
+    - bun install
+
+linux_build:
+  stage: build
   image: rust:latest
   script:
-    - rustup target add aarch64-unknown-linux-gnu
-    - apt-get update; apt-get install -y ibwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev librsvg2-dev
     - curl -fsSL https://bun.sh/install | bash
     - source ~/.bashrc
-    - cargo install tauri-cli
-    - cargo-tauri build
-    - cargo-tauri build --target aarch64-unknown-linux-gnu
-    - tar -czf sending_unicorns_linux.tar.gz target/debug/sending_unicorns
+    - rustup target add aarch64-unknown-linux-gnu
+    - apt-get update; apt-get install -y ibwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev librsvg2-dev
+    # - cargo install tauri-cli
+    # - cargo-tauri build
+    - bun tauri build --target aarch64-unknown-linux-gnu
 
   artifacts:
     paths:
-      - sending_unicorns_linux.tar.gz
+      - target/release/bundle/deb
     expire_in: 1 week
 
-windows:
-  stage: windows
+windows_build:
+  stage: build
   image: rust:latest
   script:
     - rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
@@ -36,29 +50,27 @@ windows:
     - cargo install tauri-cli
     - cargo-tauri build --target x86_64-pc-windows-msvc
     - cargo-tauri build --target aarch64-pc-windows-msvc
-    - tar -czf sending_unicorns_windows.tar.gz target/x86_64-pc-windows-msvc/debug/sending_unicorns.exe target/aarch64-pc-windows-msvc/debug/sending_unicorns.exe target/x86_64-pc-windows-msvc/debug/WebView2Loader.dll target/aarch64-pc-windows-msvc/debug/WebView2Loader.dll
 
   artifacts:
     paths:
-      - sending_unicorns_windows.tar.gz
+      - target/release/bundle/msi
     expire_in: 1 week
 
-macos:
-  stage: macos
+macos_build:
+  stage: build
   image: rust:latest
   script:
-    - rustup target add x86_64-apple-darwin aarch64-apple-darwin
-    - brew install openssl@1.1 libwebkit2gtk
     - curl -fsSL https://bun.sh/install | bash
     - source ~/.bashrc
+    - rustup target add x86_64-apple-darwin aarch64-apple-darwin
+    - brew install openssl@1.1 libwebkit2gtk
     - cargo install tauri-cli
     - cargo-tauri build --target x86_64-apple-darwin
     - cargo-tauri build --target aarch64-apple-darwin
-    - tar -czf sending_unicorns_macos.tar.gz target/x86_64-apple-darwin/debug/sending_unicorns target/aarch64-apple-darwin/debug/sending_unicorns
 
   artifacts:
     paths:
-      - sending_unicorns_macos.tar.gz
+      - target/release/bundle/dmg
     expire_in: 1 week
 
 # android:
