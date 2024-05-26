@@ -4,7 +4,7 @@ stages:
 
 # Variables globales
 variables:
-  RUST_VERSION: "stable"
+  RUST_VERSION: "latest"
   TAURI_VERSION: "latest"
   NODE_CACHE_PATH: "node_modules"
   CARGO_BIN_PATH: "/root/.cargo/bin"
