@@ -23,7 +23,7 @@ install:
   script:
     - bun install
 
-linux_build:
+linux:
   stage: build
   image: rust:latest
   script:
@@ -40,13 +40,14 @@ linux_build:
       - target/release/bundle/deb
     expire_in: 1 week
 
-windows_build:
+windows:
   stage: build
   image: rust:latest
   script:
     - rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
     - apt-get update; apt-get install -y ibwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev librsvg2-dev mingw-w64
-    - powershell -c "irm bun.sh/install.ps1 | iex"
+    - curl -fsSL https://bun.sh/install | bash
+    - source ~/.bashrc
     - cargo install tauri-cli
     - cargo-tauri build --target x86_64-pc-windows-msvc
     - cargo-tauri build --target aarch64-pc-windows-msvc
@@ -56,11 +57,12 @@ windows_build:
       - target/release/bundle/msi
     expire_in: 1 week
 
-macos_build:
+macos:
   stage: build
   image: rust:latest
   script:
     - curl -fsSL https://bun.sh/install | bash
+    - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     - source ~/.bashrc
     - rustup target add x86_64-apple-darwin aarch64-apple-darwin
     - brew install openssl@1.1 libwebkit2gtk
