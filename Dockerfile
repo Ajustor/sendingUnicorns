@@ -16,10 +16,9 @@ RUN rustup target add x86_64-apple-darwin
 
 FROM base AS windows
 RUN apt install nsis lld llvm gcc-mingw-w64 -y
-RUN rustup target add x86_64-pc-windows-gnu
+RUN rustup target add x86_64-pc-windows-msvc
 RUN rustup update
-RUN cargo install xwin
-RUN xwin --accept-license splat --output ~/.xwin --disable-symlinks
+RUN cargo install cargo-xwin
 
 FROM base as linux
 RUN rustup target add x86_64-unknown-linux-gnu
