@@ -44,9 +44,10 @@ windows:
       - ${NODE_CACHE_PATH}
   script:
     - cargo-tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc
+    - mv src-tauri/target/x86_64-pc-windows-msvc/release/bundle/ output
   artifacts:
     paths:
-      - src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+      - output
 
 mac:
   stage: packages
@@ -59,9 +60,10 @@ mac:
     - rustup target add x86_64-apple-darwin
     - cargo install tauri-cli
     - cargo-tauri build --target x86_64-apple-darwin
+    - mv src-tauri/target/x86_64-apple-darwin/release/bundle/ output
   artifacts:
     paths:
-      - src-tauri/target/x86_64-apple-darwin/release/bundle/
+      - output
 
 linux:
   stage: packages
@@ -72,6 +74,7 @@ linux:
       - ${NODE_CACHE_PATH}
   script:
     - cargo-tauri build --target x86_64-unknown-linux-gnu
+    - mv src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/ output
   artifacts:
     paths:
-      - src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/
+      - output
