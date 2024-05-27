@@ -49,21 +49,21 @@ windows:
     paths:
       - output
 
-mac:
-  stage: packages
-  image: ajustor/tauri-cli:macos
-  cache:
-    key: tauri-cli-cache
-    paths:
-      - ${NODE_CACHE_PATH}
-  script:
-    - rustup target add x86_64-apple-darwin
-    - cargo install tauri-cli
-    - cargo-tauri build --target x86_64-apple-darwin
-    - mv src-tauri/target/x86_64-apple-darwin/release/bundle/ output
-  artifacts:
-    paths:
-      - output
+# mac:
+#   stage: packages
+#   image: ajustor/tauri-cli:macos
+#   cache:
+#     key: tauri-cli-cache
+#     paths:
+#       - ${NODE_CACHE_PATH}
+#   script:
+#     - rustup target add x86_64-apple-darwin
+#     - cargo install tauri-cli
+#     - cargo-tauri build --target x86_64-apple-darwin
+#     - mv src-tauri/target/x86_64-apple-darwin/release/bundle/ output
+#   artifacts:
+#     paths:
+#       - output
 
 linux:
   stage: packages
