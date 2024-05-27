@@ -6,12 +6,12 @@ RUN cargo install tauri-cli
 
 RUN curl -fsSL https://bun.sh/install | bash
 
-# FROM base as macos
-FROM briceburg/macos:build AS macos
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
-RUN source $HOME/.bashrc
-RUN cargo install tauri-cli
+FROM base as macos
+# FROM briceburg/macos:build AS macos
+# RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+# RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+# RUN source $HOME/.bashrc
+# RUN cargo install tauri-cli
 RUN rustup target add x86_64-apple-darwin
 
 FROM base AS windows
