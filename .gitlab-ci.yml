@@ -43,7 +43,7 @@ windows:
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - cargo-tauri build --target x86_64-pc-windows-msvc --no-bundler
+    - bun build --target x86_64-pc-windows-msvc --no-bundler
     - makensis windows_builder.nsi
   artifacts:
     paths:
@@ -59,7 +59,7 @@ windows:
 #   script:
 #     - rustup target add x86_64-apple-darwin
 #     - cargo install tauri-cli
-#     - cargo-tauri build --target x86_64-apple-darwin
+#     - bun build --target x86_64-apple-darwin
 #     - mv src-tauri/target/x86_64-apple-darwin/release/bundle/ output
 #   artifacts:
 #     paths:
@@ -73,7 +73,7 @@ linux:
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - cargo-tauri build --target x86_64-unknown-linux-gnu
+    - bun build --target x86_64-unknown-linux-gnu
     - mv src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/ output
   artifacts:
     paths:
