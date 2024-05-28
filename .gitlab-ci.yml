@@ -37,13 +37,13 @@ build_view:
 
 windows:
   stage: packages
-  image: ajustor/tauri-cli:windows
+  image: ajustor/tauri2-cli:windows
   cache:
     key: tauri-cli-cache
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - bun build --target x86_64-pc-windows-msvc --no-bundler
+    - cargo-tauri build --target x86_64-pc-windows-msvc --no-bundler
     - makensis windows_builder.nsi
   artifacts:
     paths:
@@ -67,13 +67,13 @@ windows:
 
 linux:
   stage: packages
-  image: ajustor/tauri-cli:linux
+  image: ajustor/tauri2-cli:linux
   cache:
     key: tauri-cli-cache
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - bun build --target x86_64-unknown-linux-gnu
+    - cargo-tauri build --target x86_64-unknown-linux-gnu
     - mv src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/ output
   artifacts:
     paths:

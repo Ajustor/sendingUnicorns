@@ -2,7 +2,7 @@ FROM ivangabriele/tauri:debian-bullseye-18 AS base
 
 RUN apt update
 RUN apt install libwebkit2gtk-4.0-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev -y
-RUN cargo install tauri-cli
+RUN cargo install tauri-cli@=2.0.0-beta.18
 
 RUN curl -fsSL https://bun.sh/install | bash
 
