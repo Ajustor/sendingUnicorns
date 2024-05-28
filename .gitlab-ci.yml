@@ -43,11 +43,11 @@ windows:
     paths:
       - ${NODE_CACHE_PATH}
   script:
-    - cargo-tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc
-    - mv src-tauri/target/x86_64-pc-windows-msvc/release/bundle/ output
+    - cargo-tauri build --target x86_64-pc-windows-msvc --no-bundler
+    - makensis windows_builder.nsi
   artifacts:
     paths:
-      - output
+      - "SendingUnicorns Setup.exe"
 
 # mac:
 #   stage: packages

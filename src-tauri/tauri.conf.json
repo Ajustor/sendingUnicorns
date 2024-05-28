@@ -7,13 +7,10 @@
   },
   "productName": "Sending Unicorns",
   "version": "0.1.0",
-  "plugins": {
-    "updater": {
-      "active": false
-    }
-  },
+  "plugins": {},
   "identifier": "ajustor.sending-unicorns",
   "bundle": {
+    "publisher": "Ajustor",
     "active": true,
     "category": "DeveloperTool",
     "copyright": "",
@@ -46,16 +43,15 @@
     }
   },
   "app": {
-    "security": {
-      "csp": null
-    },
     "windows": [
       {
         "fullscreen": false,
         "height": 720,
         "resizable": true,
         "title": "Sending Unicorns",
-        "width": 1080
+        "minWidth": 1080,
+        "center": true,
+        "shadow": true
       }
     ]
   }

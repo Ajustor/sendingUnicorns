@@ -16,25 +16,19 @@ fn init() -> std::io::Result<()> {
 
 #[tauri::command]
 async fn make_api_call(method: String, url: String) -> String {
-    return tokio::spawn(async move {
-        let raw_rdo_schema = api_service::call(method, url).await;
-        return raw_rdo_schema;
-    })
-    .await
-    .unwrap();
+    return tauri::async_runtime::block_on(async {
+        return api_service::call(method, url).await;
+    });
 }
 
-#[tokio::main]
-
-async fn main() {
+fn main() {
     let config_creation = init();
     if config_creation.is_err() {
         return;
     }
 
-    tauri::async_runtime::set(tokio::runtime::Handle::current());
-
     tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![make_api_call])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,4 +1,4 @@
-use reqwest;
+use tauri_plugin_http::reqwest;
 
 pub async fn call(method: String, url: String) -> String {
     let request = reqwest::Client::builder()
