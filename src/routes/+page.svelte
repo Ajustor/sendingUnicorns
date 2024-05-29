@@ -1,2 +1,15 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script lang="ts">
+  import { Input } from '@lib/components/ui/input'
+
+  type Props = {
+    headerTitle: string
+  }
+
+  let { headerTitle }: Props = $props()
+
+  let url = $state('')
+</script>
+
+<div>
+  <Input placeholder="url" bind:value={url} class="w-full" type="url" />
+</div>

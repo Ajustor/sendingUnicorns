@@ -9,9 +9,10 @@
     DialogTitle,
     DialogTrigger
   } from '@lib/components/ui/dialog'
-  import { Button } from '$lib/components/ui/button'
-  import { Label } from '$lib/components/ui/label'
-  import { Input } from '$lib/components/ui/input'
+  import { Button } from '@lib/components/ui/button'
+  import { Label } from '@lib/components/ui/label'
+  import { Input } from '@lib/components/ui/input'
+  import { Plus } from 'lucide-svelte'
 
   type Props = { onSend: (name: string) => void }
 
@@ -22,7 +23,7 @@
 
 <Dialog closeOnOutsideClick>
   <DialogTrigger>
-    <Button title="Ajouter une collection" />
+    <Button title="Ajouter une collection"><Plus /></Button>
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
