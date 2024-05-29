@@ -1,6 +1,6 @@
 use tauri_plugin_http::reqwest;
 
-pub async fn call(method: String, url: String, query: ) -> String {
+pub async fn call(method: String, url: String) -> String {
     let request = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .build()

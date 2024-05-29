@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri_plugin_theme::ThemePlugin;
+
 use std::fs;
 mod config;
 mod services;
@@ -27,9 +29,12 @@ fn main() {
         return;
     }
 
+    let mut ctx = tauri::generate_context!();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_theme::init(ctx.config_mut()))
         .invoke_handler(tauri::generate_handler![make_api_call])
-        .run(tauri::generate_context!())
+        .run(ctx)
         .expect("error while running tauri application");
 }
