@@ -10,6 +10,16 @@
   let url = $state('')
 </script>
 
-<div>
-  <Input placeholder="url" bind:value={url} class="w-full" type="url" />
+<div id="main" class="p-4">
+  <div class="p-2">
+    <h1>{headerTitle}</h1>
+    <Input placeholder="url" bind:value={url} class="w-full" type="url" />
+  </div>
 </div>
+
+<style>
+  #main {
+    display: flex;
+    flex-direction: column;
+  }
+</style>

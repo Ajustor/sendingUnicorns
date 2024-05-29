@@ -2,12 +2,14 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Config {
+pub struct Request {
     pub name: String,
+    pub url: String,
+    pub method: String
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CollectionsConfig {
+pub struct CollectionConfig {
     pub name: String,
-    pub configs: Vec<Config>,
+    pub requests: Vec<Request>
 }

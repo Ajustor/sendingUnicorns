@@ -23,7 +23,7 @@
 
 <Dialog closeOnOutsideClick>
   <DialogTrigger>
-    <Button title="Ajouter une collection"><Plus /></Button>
+    <Button title="Ajouter une collection">Ajouter une collection<Plus /></Button>
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
