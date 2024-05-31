@@ -15,7 +15,7 @@ fn init() -> std::io::Result<()> {
 }
 
 #[tauri::command]
-async fn make_api_call(method: String, url: String) -> String {
+fn make_api_call(method: String, url: String) -> String {
     return tauri::async_runtime::block_on(async {
         return api_service::call(method, url).await;
     });
@@ -23,6 +23,12 @@ async fn make_api_call(method: String, url: String) -> String {
 
 #[tauri::command]
 fn create_collection(collection_name: &str, config: structs::CollectionConfig) {
+    file_service::write_collection(collection_name, config);
+}
+
+#[tauri::command]
+fn update_collection(collection_name: &str, config: structs::CollectionConfig) {
+    file_service::delete_collection(collection_name);
     file_service::write_collection(collection_name, config);
 }
 
@@ -42,7 +48,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
-        .invoke_handler(tauri::generate_handler![make_api_call, create_collection, get_collections])
+        .invoke_handler(tauri::generate_handler![make_api_call, create_collection, get_collections, update_collection])
         .run(ctx)
         .expect("error while running tauri application");
 }
