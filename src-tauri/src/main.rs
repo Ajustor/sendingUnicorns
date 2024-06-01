@@ -48,7 +48,12 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
-        .invoke_handler(tauri::generate_handler![make_api_call, create_collection, get_collections, update_collection])
+        .invoke_handler(tauri::generate_handler![
+            make_api_call,
+            create_collection,
+            get_collections,
+            update_collection
+        ])
         .run(ctx)
         .expect("error while running tauri application");
 }

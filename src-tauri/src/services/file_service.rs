@@ -43,7 +43,6 @@ pub fn delete_collection(collection_name: &str) {
 
 pub fn read_collection(collection_name: &str) -> CollectionConfig {
     let path = get_collection_path(collection_name);
-    println!("get collection {collection_name} on path {path}");
     let collection_config_result = fs::read_to_string(path.clone());
 
     let collection_config = match collection_config_result {

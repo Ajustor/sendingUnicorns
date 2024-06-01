@@ -3,9 +3,9 @@
   import { Label } from '$lib/components/ui/label'
   import { Button } from '$lib/components/ui/button'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
-  import { AddCollectionDialog, AddRequestDialog } from '../components/dialogs'
-  import { Result } from '../components/requestResult'
-  import { setContext } from 'svelte'
+  import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
+  import { Result } from '@components/requestResult'
+  import { RequestConfig } from '@components/forms'
   import {
     Accordion,
     AccordionItem,
@@ -23,9 +23,11 @@
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
-  import type { Collection } from '@types/collection.type'
-  import type { Request } from '@types/request.type'
+  import type { Collection } from '../types/collection.type'
+  import type { Request } from '../types/request.type'
   import { Send } from 'lucide-svelte'
+  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
+  import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
 
   const defaultRequest = {
     name: 'nouvelle requête',
@@ -80,10 +82,25 @@
 
   let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
-    console.log(selectedRequest)
     sendRequestPromise = invoke('make_api_call', selectedRequest)
   }
 </script>
+
+{#snippet configView()}
+  <RequestConfig />
+{/snippet}
+
+{#snippet resultView()}
+  {#await sendRequestPromise}
+    <!-- promise is pending -->
+    sending unicorns...
+  {:then result}
+    <!-- promise was fulfilled -->
+    <Result {result} />
+  {:catch error}
+    <!-- promise was rejected -->
+    {error}
+  {/await}{/snippet}
 
 {#await getCollections() then _}
   <aside class="h-full max-w-md border-r p-4">
@@ -139,16 +156,31 @@
     <Input class="col-span-3" placeholder="url" bind:value={selectedRequest.url} type="url" />
     <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
-  {#await sendRequestPromise}
-    <!-- promise is pending -->
-    sending unicorns...
-  {:then result}
-    <!-- promise was fulfilled -->
-    <Result {result} />
-  {:catch error}
-    <!-- promise was rejected -->
-    {error}
-  {/await}
+
+  <Tabs class="h-dvh w-full">
+    <TabsList>
+      <TabsTrigger value="config">Configuration</TabsTrigger>
+      <TabsTrigger value="combo">Vue scindée</TabsTrigger>
+      <TabsTrigger value="result">Résultats</TabsTrigger>
+    </TabsList>
+    <TabsContent value="config">
+      {@render configView()}
+    </TabsContent>
+    <TabsContent value="combo">
+      <ResizablePaneGroup direction="horizontal" class="max-w">
+        <ResizablePane defaultSize={30}>{@render configView()}</ResizablePane>
+        <ResizableHandle withHandle />
+        <ResizablePane defaultSize={70}>
+          <div class="p-2">
+            {@render resultView()}
+          </div>
+        </ResizablePane>
+      </ResizablePaneGroup>
+    </TabsContent>
+    <TabsContent class="h-full" value="result">
+      {@render resultView()}
+    </TabsContent>
+  </Tabs>
 </div>
 
 <style>
