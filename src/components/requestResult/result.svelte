@@ -5,19 +5,19 @@
   export let result: string
 </script>
 
-<Tabs class="h-full">
+<Tabs class="h-dvh w-full">
   <TabsList>
     <TabsTrigger value="raw">Résultat</TabsTrigger>
     <TabsTrigger value="preview">Prévisualisation</TabsTrigger>
   </TabsList>
   <TabsContent value="raw">
     <ScrollArea>
-      <div>
+      <p class="max-h-dvh max-w-prose">
         {result}
-      </div>
+      </p>
     </ScrollArea>
   </TabsContent>
   <TabsContent class="h-full" value="preview">
-    <iframe class="h-full w-full" srcdoc={result} />
+    <iframe class="h-full w-full" srcdoc={result} title="résultat de la requête"></iframe>
   </TabsContent>
 </Tabs>

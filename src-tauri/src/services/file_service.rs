@@ -1,8 +1,10 @@
 use std::fs;
 
+use uuid::Uuid;
+
 use crate::config::home;
 
-use crate::services::structs::{CollectionConfig};
+use crate::services::structs::CollectionConfig;
 
 fn get_collections_path() -> String {
     let base_path = home::get();
@@ -49,5 +51,12 @@ pub fn read_collection(collection_name: &str) -> CollectionConfig {
         Err(error) => panic!("Problem opening the file: {:?}", error),
     };
 
-    return serde_json::from_str(&collection_config).expect("JSON was not well-formatted");
+    let mut config: CollectionConfig =
+        serde_json::from_str(&collection_config).expect("JSON was not well-formatted");
+
+    for request in &mut config.requests {
+        request.id = Some(Uuid::new_v4());
+    }
+
+    return config;
 }

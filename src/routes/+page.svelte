@@ -27,18 +27,38 @@
   import type { Request } from '@types/request.type'
   import { Send } from 'lucide-svelte'
 
-  type Props = {
-    headerTitle: string
+  const defaultRequest = {
+    name: 'nouvelle requête',
+    url: '',
+    method: Method.GET,
+    id: 'no-id'
   }
 
-  let { headerTitle }: Props = $props()
+  let collections: Collection[] = $state([])
+  let selectedRequestId = $state('no-id')
+  let selectedRequest: Request = $derived(selectRequest())
 
-  let collections = $state([])
-  let selectedRequest: Request = $state({ name: 'nouvelle requête', url: '', method: Method.GET })
+  let selectedMethod = $derived(
+    selectedRequest.method
+      ? {
+          label: selectedRequest.method.toUpperCase(),
+          value: selectedRequest.method
+        }
+      : undefined
+  )
+
+  function selectRequest() {
+    for (const collection of collections) {
+      const request = collection.requests.find(({ id }) => id === selectedRequestId)
+      if (request) {
+        return request
+      }
+    }
+    return defaultRequest
+  }
 
   const createNewCollection = async (name: string) => {
-    console.log('create new collection', { name })
-    const newCollectionToAdd = { name, requests: [] }
+    const newCollectionToAdd: Collection = { name, requests: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
     collections.push(newCollectionToAdd)
   }
@@ -49,22 +69,24 @@
     url: string,
     method: Method
   ) => {
-    collection.requests.push({ name, url, method })
+    collection.requests.push({ name, url, method, id: '' })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
+    collections = await invoke('get_collections')
   }
 
   const getCollections = async () => {
     collections = await invoke('get_collections')
   }
 
-  let sendRequestPromise: Promise<string> = $state('')
+  let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
+    console.log(selectedRequest)
     sendRequestPromise = invoke('make_api_call', selectedRequest)
   }
 </script>
 
 {#await getCollections() then _}
-  <aside class="h-full border-r p-4">
+  <aside class="h-full max-w-md border-r p-4">
     <AddCollectionDialog onSend={createNewCollection} />
     {#if collections.length}
       <!-- content here -->
@@ -77,10 +99,10 @@
                 <AddRequestDialog
                   onSend={(name: string, url: string, method: Method) => createNewRequest(collection, name, url, method)}
                 />
-                <RadioGroup class="p-4" onselect={(newValue) => console.log({ newValue })}>
+                <RadioGroup class="p-4" bind:value={selectedRequestId}>
                   {#each collection.requests as request}
                     <div class="flex items-center space-x-2">
-                      <RadioGroupItem value={request} id={request.name} />
+                      <RadioGroupItem value={request.id} id={request.name} />
                       <Label for={request.name}>{request.name}</Label>
                     </div>
                   {/each}
@@ -98,12 +120,12 @@
   <h1>{selectedRequest.name}</h1>
   <div class="grid grid-cols-5 gap-2 p-2">
     <Select
-      class="col-span-2"
-      onSelectedChange={({ value }) => {
-        value && (selectedRequest.method = value)
+      selected={selectedMethod}
+      onSelectedChange={(v) => {
+        v && (selectedRequest.method = v.value)
       }}
     >
-      <SelectTrigger>
+      <SelectTrigger class="col-span-1">
         <SelectValue placeholder="Sélectionnez la méthode" />
       </SelectTrigger>
       <SelectContent>
@@ -122,9 +144,7 @@
     sending unicorns...
   {:then result}
     <!-- promise was fulfilled -->
-    <div>
-      <Result {result} />
-    </div>
+    <Result {result} />
   {:catch error}
     <!-- promise was rejected -->
     {error}
@@ -135,5 +155,6 @@
   #main {
     display: flex;
     flex-direction: column;
+    @apply overflow-hidden;
   }
 </style>

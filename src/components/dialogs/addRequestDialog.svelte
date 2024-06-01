@@ -29,6 +29,15 @@
   let url = $state('')
   let method: Method = $state(Method.GET)
 
+  let selectedMethod = $derived(
+    method
+      ? {
+          label: method,
+          value: method
+        }
+      : undefined
+  )
+
   let { onSend }: Props = $props()
 </script>
 
@@ -58,8 +67,9 @@
       <div class="grid grid-cols-4 items-center gap-4">
         <Label for="method" class="text-right">la méthode de votre requête</Label>
         <Select
-          onSelectedChange={({ value }) => {
-            value && (method = value)
+          selected={selectedMethod}
+          onSelectedChange={(event) => {
+            event && (method = event.value)
           }}
         >
           <SelectTrigger class="col-span-3">
@@ -68,7 +78,7 @@
           <SelectContent>
             <SelectGroup>
               {#each Object.entries(Method) as [key, value]}
-                <SelectItem {value} label={key}>{key}</SelectItem>
+                <SelectItem typeof={typeof Method} {value} label={key}>{key}</SelectItem>
               {/each}
             </SelectGroup>
           </SelectContent>
