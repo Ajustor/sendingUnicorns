@@ -4,6 +4,7 @@
   import { Button } from '$lib/components/ui/button'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
   import { AddCollectionDialog, AddRequestDialog } from '../components/dialogs'
+  import { Result } from '../components/requestResult'
   import { setContext } from 'svelte'
   import {
     Accordion,
@@ -24,6 +25,7 @@
   import { Method } from '@enums/methods'
   import type { Collection } from '@types/collection.type'
   import type { Request } from '@types/request.type'
+  import { Send } from 'lucide-svelte'
 
   type Props = {
     headerTitle: string
@@ -66,7 +68,7 @@
     <AddCollectionDialog onSend={createNewCollection} />
     {#if collections.length}
       <!-- content here -->
-      <ScrollArea class="collection-list rounded-md border">
+      <ScrollArea class="collection-list rounded-md border p-4">
         <Accordion>
           {#each collections as collection}
             <AccordionItem value={collection.name}>
@@ -75,7 +77,7 @@
                 <AddRequestDialog
                   onSend={(name: string, url: string, method: Method) => createNewRequest(collection, name, url, method)}
                 />
-                <RadioGroup bind:value={selectedRequest}>
+                <RadioGroup class="p-4" onselect={(newValue) => console.log({ newValue })}>
                   {#each collection.requests as request}
                     <div class="flex items-center space-x-2">
                       <RadioGroupItem value={request} id={request.name} />
@@ -94,14 +96,14 @@
 
 <div id="main" class="h-full w-full p-4">
   <h1>{selectedRequest.name}</h1>
-  <div class="grid grid-cols-5 p-2">
+  <div class="grid grid-cols-5 gap-2 p-2">
     <Select
-      class=""
+      class="col-span-2"
       onSelectedChange={({ value }) => {
         value && (selectedRequest.method = value)
       }}
     >
-      <SelectTrigger class="col-span-3">
+      <SelectTrigger>
         <SelectValue placeholder="Sélectionnez la méthode" />
       </SelectTrigger>
       <SelectContent>
@@ -112,21 +114,16 @@
         </SelectGroup>
       </SelectContent>
     </Select>
-    <Input
-      class="col-span-3 col-start-2"
-      placeholder="url"
-      bind:value={selectedRequest.url}
-      type="url"
-    />
-    <Button class="" onclick={sendRequest}>Envoyer</Button>
+    <Input class="col-span-3" placeholder="url" bind:value={selectedRequest.url} type="url" />
+    <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
   {#await sendRequestPromise}
     <!-- promise is pending -->
     sending unicorns...
   {:then result}
     <!-- promise was fulfilled -->
-    <div class="overflow-hidden">
-      {@html result}
+    <div>
+      <Result {result} />
     </div>
   {:catch error}
     <!-- promise was rejected -->

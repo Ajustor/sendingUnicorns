@@ -34,7 +34,7 @@
 
 <Dialog closeOnOutsideClick>
   <DialogTrigger>
-    <Button title="Ajouter une requête">Ajouter une requête<Plus /></Button>
+    <Button title="Ajouter une requête" class="gap-2">Ajouter une requête<Plus /></Button>
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
