@@ -6,3 +6,9 @@ export type Request = {
   name: string,
   method: Method
 }
+
+export type RequestOptions = {
+  body: Record<string, unknown>,
+  headers: Record<string, string>,
+  params: Record<string, unknown>
+}

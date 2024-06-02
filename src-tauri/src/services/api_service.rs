@@ -1,31 +1,32 @@
-use tauri_plugin_http::reqwest;
+use std::str::FromStr;
 
-pub async fn call(method: String, url: String) -> String {
-    let request = reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
-        .build()
-        .unwrap();
+use serde_json::Value;
+use tauri::http::{HeaderMap, HeaderName, HeaderValue};
+use tauri_plugin_http::reqwest::{self, RequestBuilder};
+
+use super::structs::RequestOptions;
+
+pub async fn call(method: String, url: String, request_options: RequestOptions) -> String {
+    let mut client_builder: reqwest::ClientBuilder =
+        reqwest::Client::builder().danger_accept_invalid_certs(true);
+
+    client_builder = add_headers_to_client(client_builder, request_options.headers);
+
+    let request = client_builder.build().unwrap();
 
     if method == "get" {
-        return get(request, url).await;
+        return get(request, url, request_options.body).await;
     }
 
     if method == "post" {
-        return post(request, url).await;
+        return post(request, url, request_options.body).await;
     }
 
-    return get(request, url).await;
+    return get(request, url, request_options.body).await;
 }
 
-async fn get(request: reqwest::Client, url: String) -> String {
-    let resp = request.get(url).send().await.unwrap().text().await.unwrap();
-
-    return resp;
-}
-
-async fn post(request: reqwest::Client, url: String) -> String {
-    let resp = request
-        .post(url)
+async fn get(request: reqwest::Client, url: String, body: Option<Value>) -> String {
+    let resp = add_body_to_request(request.get(url), body)
         .send()
         .await
         .unwrap()
@@ -34,4 +35,47 @@ async fn post(request: reqwest::Client, url: String) -> String {
         .unwrap();
 
     return resp;
+}
+
+fn add_headers_to_client(
+    client_builder: reqwest::ClientBuilder,
+    headers: Option<Value>,
+) -> reqwest::ClientBuilder {
+    match headers {
+        None => {
+            return client_builder;
+        }
+        Some(request_headers) => {
+            let mut headers = HeaderMap::new();
+            let request_headers_object = request_headers.as_object().unwrap();
+
+            for (key, value) in request_headers_object.clone() {
+                let header_value = HeaderValue::from_str(value.as_str().unwrap()).unwrap();
+                let header_name = HeaderName::from_str(key.as_str()).unwrap();
+                headers.insert(header_name, header_value);
+            }
+            return client_builder.default_headers(headers);
+        }
+    };
+}
+
+fn add_body_to_request(request_builder: RequestBuilder, body: Option<Value>) -> RequestBuilder {
+    match body {
+        None => {
+            return request_builder;
+        }
+        Some(json_data) => {
+            if json_data.as_object().unwrap().len() != 0 {
+                println!("Adding body to request {:?}", json_data);
+                return request_builder.json(&json_data);
+            }
+            return request_builder;
+        }
+    };
+}
+
+async fn post(client: reqwest::Client, url: String, body: Option<Value>) -> String {
+    let request_builder = add_body_to_request(client.post(url), body);
+
+    return request_builder.send().await.unwrap().text().await.unwrap();
 }

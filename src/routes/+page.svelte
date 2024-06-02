@@ -24,7 +24,7 @@
   import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
   import type { Collection } from '../types/collection.type'
-  import type { Request } from '../types/request.type'
+  import type { Request, RequestOptions } from '../types/request.type'
   import { Send } from 'lucide-svelte'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
@@ -39,6 +39,12 @@
   let collections: Collection[] = $state([])
   let selectedRequestId = $state('no-id')
   let selectedRequest: Request = $derived(selectRequest())
+
+  let requestOptions: RequestOptions = $state({
+    body: {},
+    headers: {},
+    params: {}
+  })
 
   let selectedMethod = $derived(
     selectedRequest.method
@@ -82,7 +88,7 @@
 
   let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
-    sendRequestPromise = invoke('make_api_call', selectedRequest)
+    sendRequestPromise = invoke('make_api_call', { ...selectedRequest, requestOptions })
   }
 </script>
 

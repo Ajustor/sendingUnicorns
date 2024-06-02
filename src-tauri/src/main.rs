@@ -5,6 +5,8 @@ use std::fs;
 mod config;
 mod services;
 
+use services::structs::RequestOptions;
+
 use crate::config::home;
 use crate::services::{api_service, file_service, structs};
 
@@ -15,9 +17,9 @@ fn init() -> std::io::Result<()> {
 }
 
 #[tauri::command]
-fn make_api_call(method: String, url: String) -> String {
+fn make_api_call(method: String, url: String, request_options: RequestOptions) -> String {
     return tauri::async_runtime::block_on(async {
-        return api_service::call(method, url).await;
+        return api_service::call(method, url, request_options).await;
     });
 }
 
