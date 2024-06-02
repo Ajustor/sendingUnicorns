@@ -42,7 +42,7 @@
 
   let requestOptions: RequestOptions = $state({
     body: {},
-    headers: {},
+    headers: [],
     params: {}
   })
 
@@ -93,7 +93,7 @@
 </script>
 
 {#snippet configView()}
-  <RequestConfig />
+  <RequestConfig bind:requestOptions />
 {/snippet}
 
 {#snippet resultView()}

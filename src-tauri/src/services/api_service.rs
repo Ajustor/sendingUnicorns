@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use serde_json::Value;
 use tauri::http::{HeaderMap, HeaderName, HeaderValue};
@@ -39,7 +39,7 @@ async fn get(request: reqwest::Client, url: String, body: Option<Value>) -> Stri
 
 fn add_headers_to_client(
     client_builder: reqwest::ClientBuilder,
-    headers: Option<Value>,
+    headers: Option<Vec<[String; 2]>>,
 ) -> reqwest::ClientBuilder {
     match headers {
         None => {
@@ -47,11 +47,10 @@ fn add_headers_to_client(
         }
         Some(request_headers) => {
             let mut headers = HeaderMap::new();
-            let request_headers_object = request_headers.as_object().unwrap();
 
-            for (key, value) in request_headers_object.clone() {
-                let header_value = HeaderValue::from_str(value.as_str().unwrap()).unwrap();
-                let header_name = HeaderName::from_str(key.as_str()).unwrap();
+            for header in request_headers.clone() {
+                let header_name = HeaderName::from_str(header[0].as_str()).unwrap();
+                let header_value = HeaderValue::from_str(header[1].as_str()).unwrap();
                 headers.insert(header_name, header_value);
             }
             return client_builder.default_headers(headers);

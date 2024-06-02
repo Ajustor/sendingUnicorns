@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
@@ -22,5 +24,5 @@ pub struct CollectionConfig {
 pub struct RequestOptions {
     pub body: Option<Value>,
     pub params: Option<Value>,
-    pub headers: Option<Value>,
+    pub headers: Option<Vec<[String; 2]>>,
 }

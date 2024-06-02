@@ -9,6 +9,6 @@ export type Request = {
 
 export type RequestOptions = {
   body: Record<string, unknown>,
-  headers: Record<string, string>,
+  headers: string[][],
   params: Record<string, unknown>
 }
