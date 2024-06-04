@@ -12,7 +12,6 @@ ShowInstDetails show
 
 !define MUI_ICON "src-tauri\icons\icon.ico"
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "sendingUnicorns.bmp"
 !define MUI_HEADERIMAGE_RIGHT
 
 !insertmacro MUI_PAGE_INSTFILES

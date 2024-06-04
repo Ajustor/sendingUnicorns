@@ -27,12 +27,18 @@
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
-  import { commands, type Request, type CollectionConfig, type Result } from '../backApi'
-  // import { register } from '@tauri-apps/plugin-global-shortcut'
+  import { commands, type Request, type CollectionConfig, type Result } from '../tauriApi'
+  // import { register, isRegistered, unregister } from '@tauri-apps/plugin-global-shortcut'
 
-  // register('CommandOrControl+S', (event) => {
-  //   if (event.state === 'Pressed') {
-  //     console.log('Shortcut triggered')
+  // isRegistered('Control+S').then((isCtrlSRegistered) => {
+  //   unregister('Control+S')
+  //   isCtrlSRegistered = false
+  //   if (!isCtrlSRegistered) {
+  //     register('Control+S', (event) => {
+  //       if (event.state === 'Pressed') {
+  //         console.log('Shortcut triggered')
+  //       }
+  //     })
   //   }
   // })
 

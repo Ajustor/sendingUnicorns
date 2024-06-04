@@ -4,8 +4,10 @@
   import { Toaster } from '$lib/components/ui/sonner'
   // import { invoke } from '@tauri-apps/api/core'
   import { listen } from '@tauri-apps/api/event'
+  import { toast } from 'svelte-sonner'
 
   listen('shortcut-event', (event) => {
+    toast.info('shortcut-event', { description: JSON.stringify(event.payload) })
     console.log(event)
   })
 

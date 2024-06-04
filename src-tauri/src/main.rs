@@ -71,7 +71,7 @@ fn main() {
             .events(tauri_specta::collect_events![]); // <- Each of your commands
 
         #[cfg(debug_assertions)] // <- Only export on non-release builds
-        let builder = builder.path("../src/backApi.ts");
+        let builder = builder.path("../src/tauriApi.ts");
 
         builder.build().unwrap()
     };
@@ -86,19 +86,26 @@ fn main() {
             {
                 use tauri::Manager;
                 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["ctrl+s"])?
-                        .with_handler(|app, shortcut, event| {
-                            println!("Shortcut is pressed {}", shortcut);
-                            if event.state == ShortcutState::Pressed {
-                                if shortcut.matches(Modifiers::CONTROL, Code::KeyS) {
-                                    let _ = app.emit("shortcut-event", "save");
+                println!("Start shortcuts register");
+
+                app.handle()
+                    .plugin(
+                        tauri_plugin_global_shortcut::Builder::new()
+                            .with_shortcuts(["CommandOrControl+s"])
+                            .unwrap()
+                            .with_handler(|app, shortcut, event| {
+                                println!("Shortcut is pressed {}", shortcut);
+                                if event.state == ShortcutState::Pressed {
+                                    if shortcut.matches(Modifiers::CONTROL, Code::KeyS) {
+                                        let _ = app.emit("shortcut-event", "save");
+                                    }
                                 }
-                            }
-                        })
-                        .build(),
-                )?;
+                            })
+                            .build(),
+                    )
+                    .unwrap();
+
+                println!("Shortcuts registered");
             }
             register_events(app);
             Ok(())
