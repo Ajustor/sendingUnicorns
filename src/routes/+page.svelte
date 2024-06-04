@@ -4,7 +4,7 @@
   import { Button } from '$lib/components/ui/button'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
   import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
-  import { Result } from '@components/requestResult'
+  import { RequestResultViewer } from '@components/requestResult'
   import { RequestConfig } from '@components/forms'
   import {
     Accordion,
@@ -23,28 +23,36 @@
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
-  import type { Collection } from '../types/collection.type'
-  import type { Request, RequestOptions } from '../types/request.type'
   import { Send } from 'lucide-svelte'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
+  import { toast } from 'svelte-sonner'
+  import { commands, type Request, type CollectionConfig, type Result } from '../backApi'
+  // import { register } from '@tauri-apps/plugin-global-shortcut'
 
-  const defaultRequest = {
+  // register('CommandOrControl+S', (event) => {
+  //   if (event.state === 'Pressed') {
+  //     console.log('Shortcut triggered')
+  //   }
+  // })
+
+  let defaultRequest: Request = $state({
     name: 'nouvelle requête',
     url: '',
     method: Method.GET,
-    id: 'no-id'
-  }
+    id: 'no-id',
+    options: {
+      body: {},
+      headers: [],
+      params: {}
+    },
+    pre_request_script: null,
+    test: null
+  })
 
-  let collections: Collection[] = $state([])
+  let collections: CollectionConfig[] = $state([])
   let selectedRequestId = $state('no-id')
   let selectedRequest: Request = $derived(selectRequest())
-
-  let requestOptions: RequestOptions = $state({
-    body: {},
-    headers: [],
-    params: {}
-  })
 
   let selectedMethod = $derived(
     selectedRequest.method
@@ -66,20 +74,22 @@
   }
 
   const createNewCollection = async (name: string) => {
-    const newCollectionToAdd: Collection = { name, requests: [] }
+    const newCollectionToAdd: CollectionConfig = { name, requests: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
     collections.push(newCollectionToAdd)
+    toast.success('Collection créée')
   }
 
   const createNewRequest = async (
-    collection: Collection,
+    collection: CollectionConfig,
     name: string,
     url: string,
     method: Method
   ) => {
-    collection.requests.push({ name, url, method, id: '' })
+    collection.requests.push({ ...defaultRequest, name, url, method })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
     collections = await invoke('get_collections')
+    toast.success('Requête créée')
   }
 
   const getCollections = async () => {
@@ -88,12 +98,39 @@
 
   let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
-    sendRequestPromise = invoke('make_api_call', { ...selectedRequest, requestOptions })
+    if (!selectedRequest.url) {
+      toast.error("Merci d'entrer une url")
+      return
+    }
+
+    const { promise, resolve, reject } = Promise.withResolvers<string>()
+
+    sendRequestPromise = promise
+
+    const result = await commands.makeApiCall(selectedRequest.method, selectedRequest.url, {
+      ...selectedRequest.options,
+      headers: selectedRequest.options.headers.reduce(
+        (acc, [key, value]) => {
+          if (!key) {
+            return acc
+          }
+          return [...acc, [key, value]]
+        },
+        [] as [string, string][]
+      )
+    })
+
+    if (result.status === 'error') {
+      toast.error('Une erreur est survenue', { description: result.error })
+      return reject(result.error)
+    }
+
+    resolve(result.data)
   }
 </script>
 
 {#snippet configView()}
-  <RequestConfig bind:requestOptions />
+  <RequestConfig bind:requestOptions={selectedRequest.options} />
 {/snippet}
 
 {#snippet resultView()}
@@ -102,11 +139,12 @@
     sending unicorns...
   {:then result}
     <!-- promise was fulfilled -->
-    <Result {result} />
+    <RequestResultViewer {result} />
   {:catch error}
     <!-- promise was rejected -->
     {error}
-  {/await}{/snippet}
+  {/await}
+{/snippet}
 
 {#await getCollections() then _}
   <aside class="h-full max-w-md border-r p-4">

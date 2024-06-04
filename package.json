@@ -22,6 +22,7 @@
     "@types/eslint": "^8.56.10",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
+    "@tauri-apps/plugin-global-shortcut": "^2.0.0-beta.5",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.4.0",
     "eslint-config-prettier": "^9.1.0",

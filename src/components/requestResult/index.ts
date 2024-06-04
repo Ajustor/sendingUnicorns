@@ -1,3 +1,3 @@
-import Result from './result.svelte'
+import RequestResultViewer from './requestResultViewer.svelte'
 
-export { Result }
+export { RequestResultViewer }

@@ -1,10 +1,14 @@
+use std::collections::HashMap;
 use std::fs;
 
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::config::home;
 
 use crate::services::structs::CollectionConfig;
+
+use super::structs::RequestOptions;
 
 fn get_collections_path() -> String {
     let base_path = home::get();
@@ -54,7 +58,16 @@ pub fn read_collection(collection_name: &str) -> CollectionConfig {
         serde_json::from_str(&collection_config).expect("JSON was not well-formatted");
 
     for request in &mut config.requests {
-        request.id = Some(Uuid::new_v4());
+        request.id = Some(Uuid::new_v4().to_string());
+
+        if request.options.is_none() {
+            println!("Add default options to request ");
+            request.options = Some(RequestOptions {
+                headers: Some(Vec::new()),
+                body: Some(HashMap::new()),
+                params: Some(HashMap::new()),
+            });
+        }
     }
 
     return config;
