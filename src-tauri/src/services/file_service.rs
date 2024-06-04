@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
 
-use serde_json::Value;
 use uuid::Uuid;
 
 use crate::config::home;

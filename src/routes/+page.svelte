@@ -28,19 +28,19 @@
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
   import { commands, type Request, type CollectionConfig, type Result } from '../tauriApi'
-  // import { register, isRegistered, unregister } from '@tauri-apps/plugin-global-shortcut'
+  import { listen } from '@tauri-apps/api/event'
 
-  // isRegistered('Control+S').then((isCtrlSRegistered) => {
-  //   unregister('Control+S')
-  //   isCtrlSRegistered = false
-  //   if (!isCtrlSRegistered) {
-  //     register('Control+S', (event) => {
-  //       if (event.state === 'Pressed') {
-  //         console.log('Shortcut triggered')
-  //       }
-  //     })
-  //   }
-  // })
+  listen('shortcut-event', (event) => {
+    if (!requestCollection) {
+      toast.info('Votre requête ne fait partie d\'aucune collection', {description: 'Merci de créer votre collection avant d\'enregistrer votre requête'})
+      return 
+    }
+    invoke('update_collection', { collectionName: requestCollection.name, config: requestCollection }).then(() => {
+      toast.success('Collection mise à jours')
+    }).catch((error) => {
+      toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {description: error})
+    })
+  })
 
   let defaultRequest: Request = $state({
     name: 'nouvelle requête',
@@ -59,6 +59,7 @@
   let collections: CollectionConfig[] = $state([])
   let selectedRequestId = $state('no-id')
   let selectedRequest: Request = $derived(selectRequest())
+  let requestCollection: null | CollectionConfig = $derived(getCollection())
 
   let selectedMethod = $derived(
     selectedRequest.method
@@ -77,6 +78,16 @@
       }
     }
     return defaultRequest
+  }
+
+  function getCollection() {
+    for (const collection of collections) {
+      const request = collection.requests.find(({ id }) => id === selectedRequestId)
+      if (request) {
+        return collection
+      }
+    }
+    return null
   }
 
   const createNewCollection = async (name: string) => {

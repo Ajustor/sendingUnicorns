@@ -8,7 +8,6 @@
   export let requestOptions: RequestOptions
 
   function addNewHeader() {
-    console.log('add new header', requestOptions.headers)
     requestOptions.headers?.push(['', ''])
   }
 </script>
@@ -20,7 +19,7 @@
     <TabsTrigger value="body">Body</TabsTrigger>
   </TabsList>
   <TabsContent value="headers">
-    {#each requestOptions.headers as [headerKey, headerValue] ([headerKey])}
+    {#each requestOptions.headers as [headerKey, headerValue]}
       <div class="flex">
         <Input placeholder="key" bind:value={headerKey} />
         <Input placeholder="value" bind:value={headerValue} />
