@@ -16,6 +16,7 @@ setup:
   rules: 
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   cache:
     key: tauri-cli-cache
     paths:
@@ -31,6 +32,7 @@ build_view:
   rules: 
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   cache:
     key: tauri-cli-cache
     paths:
@@ -48,6 +50,7 @@ windows:
   rules: 
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   cache:
     key: tauri-cli-cache
     paths:
@@ -86,6 +89,7 @@ linux:
   rules: 
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   cache:
     key: tauri-cli-cache
     paths:
