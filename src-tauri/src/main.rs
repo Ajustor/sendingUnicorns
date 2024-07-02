@@ -91,17 +91,17 @@ fn main() {
                 app.handle()
                     .plugin(
                         tauri_plugin_global_shortcut::Builder::new()
-                            .with_shortcuts(["CommandOrControl+s"])?
-                            .with_handler(|app, shortcut, event| {
-                                println!("Shortcut is pressed {}", shortcut);
-                                if event.state == ShortcutState::Pressed {
-                                    if shortcut.matches(Modifiers::CONTROL, Code::KeyS)
-                                        || shortcut.matches(Modifiers::SUPER, Code::KeyS)
-                                    {
-                                        let _ = app.emit("shortcut-event", "save");
-                                    }
-                                }
-                            })
+                            // .with_shortcuts(["CommandOrControl+s"])?
+                            // .with_handler(|app, shortcut, event| {
+                            //     println!("Shortcut is pressed {}", shortcut);
+                            //     if event.state == ShortcutState::Pressed {
+                            //         if shortcut.matches(Modifiers::CONTROL, Code::KeyS)
+                            //             || shortcut.matches(Modifiers::SUPER, Code::KeyS)
+                            //         {
+                            //             let _ = app.emit("shortcut-event", "save");
+                            //         }
+                            //     }
+                            // })
                             .build(),
                     )
                     .unwrap();

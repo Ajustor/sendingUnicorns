@@ -38,7 +38,8 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
       "webviewInstallMode": {
-        "type": "offlineInstaller"
+        "type": "downloadBootstrapper",
+        "silent": false
       }
     }
   },

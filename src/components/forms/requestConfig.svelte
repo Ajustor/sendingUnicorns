@@ -3,7 +3,7 @@
   import { Input } from '@lib/components/ui/input'
   import { Button } from '@lib/components/ui/button'
   import { Plus } from 'lucide-svelte'
-  import type { RequestOptions } from '../../backApi'
+  import type { RequestOptions } from '../../tauriApi'
 
   export let requestOptions: RequestOptions
 

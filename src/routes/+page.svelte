@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Input } from '@lib/components/ui/input'
-  import { Label } from '$lib/components/ui/label'
-  import { Button } from '$lib/components/ui/button'
+  import { Label } from '@lib/components/ui/label'
+  import { Button } from '@lib/components/ui/button'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
   import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
   import { RequestResultViewer } from '@components/requestResult'
@@ -29,17 +29,50 @@
   import { toast } from 'svelte-sonner'
   import { commands, type Request, type CollectionConfig, type Result } from '../tauriApi'
   import { listen } from '@tauri-apps/api/event'
+  import { register } from '@tauri-apps/plugin-global-shortcut'
 
-  listen('shortcut-event', (event) => {
-    if (!requestCollection) {
-      toast.info('Votre requête ne fait partie d\'aucune collection', {description: 'Merci de créer votre collection avant d\'enregistrer votre requête'})
-      return 
+  // listen('shortcut-event', (event) => {
+  //   if (!requestCollection) {
+  //     toast.info("Votre requête ne fait partie d'aucune collection", {
+  //       description: "Merci de créer votre collection avant d'enregistrer votre requête"
+  //     })
+  //     return
+  //   }
+  //   invoke('update_collection', {
+  //     collectionName: requestCollection.name,
+  //     config: requestCollection
+  //   })
+  //     .then(() => {
+  //       toast.success('Collection mise à jours')
+  //     })
+  //     .catch((error) => {
+  //       toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
+  //         description: error
+  //       })
+  //     })
+  // })
+
+  register('CommandOrControl+S', (event) => {
+    if (event.state === 'Pressed') {
+      if (!requestCollection) {
+        toast.info("Votre requête ne fait partie d'aucune collection", {
+          description: "Merci de créer votre collection avant d'enregistrer votre requête"
+        })
+        return
+      }
+      invoke('update_collection', {
+        collectionName: requestCollection.name,
+        config: requestCollection
+      })
+        .then(() => {
+          toast.success('Collection mise à jours')
+        })
+        .catch((error) => {
+          toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
+            description: error
+          })
+        })
     }
-    invoke('update_collection', { collectionName: requestCollection.name, config: requestCollection }).then(() => {
-      toast.success('Collection mise à jours')
-    }).catch((error) => {
-      toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {description: error})
-    })
   })
 
   let defaultRequest: Request = $state({
