@@ -31,27 +31,6 @@
   import { listen } from '@tauri-apps/api/event'
   import { register } from '@tauri-apps/plugin-global-shortcut'
 
-  // listen('shortcut-event', (event) => {
-  //   if (!requestCollection) {
-  //     toast.info("Votre requête ne fait partie d'aucune collection", {
-  //       description: "Merci de créer votre collection avant d'enregistrer votre requête"
-  //     })
-  //     return
-  //   }
-  //   invoke('update_collection', {
-  //     collectionName: requestCollection.name,
-  //     config: requestCollection
-  //   })
-  //     .then(() => {
-  //       toast.success('Collection mise à jours')
-  //     })
-  //     .catch((error) => {
-  //       toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
-  //         description: error
-  //       })
-  //     })
-  // })
-
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
       if (!requestCollection) {
