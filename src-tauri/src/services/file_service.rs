@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 
 use uuid::Uuid;
@@ -63,8 +62,8 @@ pub fn read_collection(collection_name: &str) -> CollectionConfig {
             println!("Add default options to request ");
             request.options = Some(RequestOptions {
                 headers: Some(Vec::new()),
-                body: Some(HashMap::new()),
-                params: Some(HashMap::new()),
+                body: Some(Vec::new()),
+                params: Some(Vec::new()),
             });
         }
     }

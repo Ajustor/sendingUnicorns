@@ -4,7 +4,7 @@
          /** user-defined commands **/
 
          export const commands = {
-async makeApiCall(method: string, url: string, options: RequestOptions) : Promise<Result<string, string>> {
+async makeApiCall(method: string, url: string, options: RequestParams) : Promise<Result<string, string>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("make_api_call", { method, url, options }) };
 } catch (e) {
@@ -34,8 +34,10 @@ await TAURI_INVOKE("update_collection", { collectionName, config });
 /** user-defined types **/
 
 export type CollectionConfig = { name: string; requests: Request[] }
+export type Options = { is_active: boolean; value: any }
 export type Request = { name: string; url: string; method: string; id: string; pre_request_script: string | null; test: string | null; options: RequestOptions }
-export type RequestOptions = { body: { [key in string]: any }; params: { [key in string]: any }; headers: ([string, string])[] }
+export type RequestOptions = { body: ([string, Options])[]; params: ([string, Options])[]; headers: ([string, Options])[] }
+export type RequestParams = { body: ([any, any])[]; params: ([any, any])[]; headers: ([string, string])[] }
 
 /** tauri-specta globals **/
 

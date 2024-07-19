@@ -4,12 +4,12 @@ use serde_json::Value;
 use tauri::http::{HeaderMap, HeaderName, HeaderValue};
 use tauri_plugin_http::reqwest::{self, Error, RequestBuilder};
 
-use super::structs::RequestOptions;
+use super::structs::RequestParams;
 
 pub async fn call(
     method: String,
     url: String,
-    request_options: RequestOptions,
+    request_options: RequestParams,
 ) -> Result<String, Error> {
     let mut client_builder: reqwest::ClientBuilder =
         reqwest::Client::builder().danger_accept_invalid_certs(true);
@@ -26,13 +26,25 @@ pub async fn call(
         return post(request, url, request_options.body).await;
     }
 
+    if method == "patch" {
+        return patch(request, url, request_options.body).await;
+    }
+
+    if method == "put" {
+        return put(request, url, request_options.body).await;
+    }
+
+    if method == "delete" {
+        return delete(request, url, request_options.body).await;
+    }
+
     return get(request, url, request_options.body).await;
 }
 
 async fn get(
     request: reqwest::Client,
     url: String,
-    body: Option<HashMap<String, Value>>,
+    body: Option<Vec<(String, Value)>>,
 ) -> Result<String, Error> {
     let resp = add_body_to_request(request.get(url), body).send().await;
 
@@ -65,15 +77,18 @@ fn add_headers_to_client(
 
 fn add_body_to_request(
     request_builder: RequestBuilder,
-    body: Option<HashMap<String, Value>>,
+    body: Option<Vec<(String, Value)>>,
 ) -> RequestBuilder {
     match body {
         None => {
             return request_builder;
         }
-        Some(json_data) => {
+        Some(existing_body) => {
+            let json_data = existing_body
+                .into_iter() // chunks_exact returns an iterator of slices
+                .map(|chunk| (chunk.0, chunk.1)) // map slices to tuples
+                .collect::<HashMap<String, Value>>();
             if json_data.keys().len() != 0 {
-                println!("Adding body to request {:?}", json_data);
                 return request_builder.json(&json_data);
             }
             return request_builder;
@@ -84,9 +99,55 @@ fn add_body_to_request(
 async fn post(
     client: reqwest::Client,
     url: String,
-    body: Option<HashMap<String, Value>>,
+    body: Option<Vec<(String, Value)>>,
 ) -> Result<String, Error> {
-    let request_builder = add_body_to_request(client.post(url), body);
+    let resp = add_body_to_request(client.post(url), body).send().await;
 
-    return request_builder.send().await.unwrap().text().await;
+    if resp.is_err() {
+        return Err(resp.err().unwrap());
+    }
+
+    return Ok(resp.unwrap().text().await.unwrap());
+}
+
+async fn patch(
+    client: reqwest::Client,
+    url: String,
+    body: Option<Vec<(String, Value)>>,
+) -> Result<String, Error> {
+    let resp = add_body_to_request(client.patch(url), body).send().await;
+
+    if resp.is_err() {
+        return Err(resp.err().unwrap());
+    }
+
+    return Ok(resp.unwrap().text().await.unwrap());
+}
+
+async fn put(
+    client: reqwest::Client,
+    url: String,
+    body: Option<Vec<(String, Value)>>,
+) -> Result<String, Error> {
+    let resp = add_body_to_request(client.put(url), body).send().await;
+
+    if resp.is_err() {
+        return Err(resp.err().unwrap());
+    }
+
+    return Ok(resp.unwrap().text().await.unwrap());
+}
+
+async fn delete(
+    client: reqwest::Client,
+    url: String,
+    body: Option<Vec<(String, Value)>>,
+) -> Result<String, Error> {
+    let resp = add_body_to_request(client.delete(url), body).send().await;
+
+    if resp.is_err() {
+        return Err(resp.err().unwrap());
+    }
+
+    return Ok(resp.unwrap().text().await.unwrap());
 }

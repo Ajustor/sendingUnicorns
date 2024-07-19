@@ -5,14 +5,14 @@ use std::fs;
 mod config;
 mod services;
 
-use services::structs::RequestOptions;
+use services::structs::RequestParams;
 
 use crate::config::home;
 use crate::services::{api_service, file_service, structs};
 
 #[tauri::command]
 #[specta::specta]
-fn make_api_call(method: String, url: String, options: RequestOptions) -> Result<String, String> {
+fn make_api_call(method: String, url: String, options: RequestParams) -> Result<String, String> {
     return tauri::async_runtime::block_on(async {
         let response = api_service::call(method, url, options).await;
 
@@ -84,26 +84,10 @@ fn main() {
         .setup(|app| {
             #[cfg(desktop)]
             {
-                use tauri::Manager;
-                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
                 println!("Start shortcuts register");
 
                 app.handle()
-                    .plugin(
-                        tauri_plugin_global_shortcut::Builder::new()
-                            // .with_shortcuts(["CommandOrControl+s"])?
-                            // .with_handler(|app, shortcut, event| {
-                            //     println!("Shortcut is pressed {}", shortcut);
-                            //     if event.state == ShortcutState::Pressed {
-                            //         if shortcut.matches(Modifiers::CONTROL, Code::KeyS)
-                            //             || shortcut.matches(Modifiers::SUPER, Code::KeyS)
-                            //         {
-                            //             let _ = app.emit("shortcut-event", "save");
-                            //         }
-                            //     }
-                            // })
-                            .build(),
-                    )
+                    .plugin(tauri_plugin_global_shortcut::Builder::new().build())
                     .unwrap();
 
                 println!("Shortcuts registered");

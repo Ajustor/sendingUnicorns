@@ -27,9 +27,16 @@
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
-  import { commands, type Request, type CollectionConfig, type Result } from '../tauriApi'
-  import { listen } from '@tauri-apps/api/event'
+  import {
+    commands,
+    type Request,
+    type CollectionConfig,
+    type Result,
+    type RequestOptions,
+    type Options
+  } from '../tauriApi'
   import { register } from '@tauri-apps/plugin-global-shortcut'
+  import { debounce } from '@lib/utils'
 
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
@@ -60,9 +67,9 @@
     method: Method.GET,
     id: 'no-id',
     options: {
-      body: {},
+      body: [],
       headers: [],
-      params: {}
+      params: []
     },
     pre_request_script: null,
     test: null
@@ -138,9 +145,18 @@
 
     const result = await commands.makeApiCall(selectedRequest.method, selectedRequest.url, {
       ...selectedRequest.options,
+      body: selectedRequest.options.body.reduce(
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
+            return acc
+          }
+          return [...acc, [key, value]]
+        },
+        [] as [unknown, unknown][]
+      ),
       headers: selectedRequest.options.headers.reduce(
-        (acc, [key, value]) => {
-          if (!key) {
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
             return acc
           }
           return [...acc, [key, value]]
@@ -156,10 +172,89 @@
 
     resolve(result.data)
   }
+
+  const saveParams = debounce((params: [string, Options][]) => {
+    selectedRequest.options.params = params
+  }, 500)
+
+  const setParamsInUrl = debounce((url: string) => {
+    const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
+    selectedRequest.url = `${url}${
+      hasOptions
+        ? `?${selectedRequest.options.params
+            .reduce<string[]>((params, [key, { value, is_active }]) => {
+              if (!is_active) {
+                return params
+              }
+
+              return [...params, `${key}=${value}`]
+            }, [])
+            .join('&')}`
+        : ''
+    }`
+  }, 500)
+
+  $effect(() => {
+    const [url, requestParams] = selectedRequest.url.split('?')
+
+    if (!url) {
+      return
+    }
+
+    if (requestParams) {
+      const params = requestParams
+        .split('&')
+        .map<[string, string]>((param) => param.split('=') as [string, string])
+      saveParams(params.map(([key, value]) => [key, { is_active: true, value }]))
+    }
+
+    setParamsInUrl(url)
+  })
+
+  const setParamsToUrl = () => {
+    const [url] = selectedRequest.url.split('?')
+    if (selectedRequest.options.params.length) {
+      setParamsInUrl(url)
+    }
+  }
+
+  function addNewHeader() {
+    selectedRequest.options.headers.push(['', { is_active: true, value: '' }])
+  }
+
+  function addNewBodyField() {
+    selectedRequest.options.body.push(['', { is_active: true, value: '' }])
+  }
+
+  function addNewParamField() {
+    selectedRequest.options.params = [
+      ...selectedRequest.options.params,
+      ['', { is_active: true, value: '' }]
+    ]
+  }
+
+  function deleteBody(i: number) {
+    selectedRequest.options.body.splice(i, 1)
+  }
+  function deleteHeader(i: number) {
+    selectedRequest.options.headers.splice(i, 1)
+  }
+  function deleteParam(i: number) {
+    selectedRequest.options.params.splice(i, 1)
+  }
 </script>
 
 {#snippet configView()}
-  <RequestConfig bind:requestOptions={selectedRequest.options} />
+  <RequestConfig
+    bind:requestOptions={selectedRequest.options}
+    {addNewHeader}
+    {addNewBodyField}
+    {addNewParamField}
+    {deleteBody}
+    {deleteHeader}
+    {deleteParam}
+    {setParamsToUrl}
+  />
 {/snippet}
 
 {#snippet resultView()}
