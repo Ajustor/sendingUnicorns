@@ -11,10 +11,8 @@
   } from '@lib/components/ui/dialog'
 
   import { Button } from '@lib/components/ui/button'
-  import { Label } from '@lib/components/ui/label'
   import { Input } from '@lib/components/ui/input'
   import { Pencil, Plus, Trash } from 'lucide-svelte'
-  import type { Environment } from '../../tauriApi'
 
   type Props = {
     onSend: (name: string) => void

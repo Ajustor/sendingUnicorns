@@ -23,7 +23,7 @@
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
-  import { Pencil, Send } from 'lucide-svelte'
+  import { Send } from 'lucide-svelte'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
@@ -39,6 +39,7 @@
   import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
   import Mustache from 'mustache'
+  import { Codemirror } from '@lib/components/codemirror'
 
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
@@ -66,12 +67,18 @@
     test: null
   })
 
+  let defaultEnvironment: Environment = $state({
+    name: 'défaut',
+    id: 'nope',
+    vars: []
+  })
+
   let collections: CollectionConfig[] = $state([])
   let selectedRequestId = $state('no-id')
   let selectedEnvironmentId = $state('nope')
   let selectedRequest: Request = $derived(selectRequest())
   let requestCollection: null | CollectionConfig = $derived(getCollection())
-  let selectedCollectionEnvironment: null | Environment = $derived(selectEnvironment())
+  let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
 
   let selectedEnvironment = $derived(
     selectedCollectionEnvironment?.name
@@ -100,6 +107,11 @@
     return defaultRequest
   }
 
+  function updateRequestUrl(newUrl: string) {
+    console.log(newUrl)
+    selectedRequest.url = newUrl
+  }
+
   function getCollection() {
     for (const collection of collections) {
       const request = collection.requests.find(({ id }) => id === selectedRequestId)
@@ -112,7 +124,7 @@
 
   function selectEnvironment() {
     if (!requestCollection || !requestCollection.environments?.length) {
-      return null
+      return defaultEnvironment
     }
 
     const environment = requestCollection.environments.find(
@@ -123,7 +135,7 @@
       return environment
     }
 
-    return null
+    return defaultEnvironment
   }
 
   const createNewCollection = async (name: string) => {
@@ -183,10 +195,19 @@
   let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
     const hasEnvVars = selectedCollectionEnvironment?.vars.length
-    const envVars = selectedCollectionEnvironment?.vars.reduce(
+    let unparsedEnvVars: Record<string, string> = selectedCollectionEnvironment?.vars.reduce(
       (acc, [key, value]) => ({ ...acc, [key]: value }),
       {}
     )
+
+    const envVars = Object.entries(unparsedEnvVars).reduce(
+      (acc, [key, value]) => ({
+        ...acc,
+        [key]: Mustache.render(value, unparsedEnvVars, {}, { escape: (s: string) => s })
+      }),
+      {}
+    )
+
     if (!selectedRequest.url) {
       toast.error("Merci d'entrer une url")
       return
@@ -195,6 +216,11 @@
     const { promise, resolve, reject } = Promise.withResolvers<string>()
 
     sendRequestPromise = promise
+
+    console.log(
+      selectedRequest.url,
+      Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
+    )
 
     const result = await commands.makeApiCall(
       selectedRequest.method,
@@ -364,7 +390,13 @@
             {#each requestCollection?.environments as { id, name }}
               <SelectItem class="flex justify-between" value={id} label={name}>{name}</SelectItem>
             {/each}
-            <!-- else content here -->
+            <SelectItem
+              class="flex justify-between"
+              value={defaultEnvironment.id}
+              label={defaultEnvironment.name}
+            >
+              {defaultEnvironment.name}
+            </SelectItem>
           {/if}
           <AddEnvironmentDialog onSend={createNewEnvironment} />
         </SelectGroup>
@@ -435,7 +467,13 @@
         </SelectGroup>
       </SelectContent>
     </Select>
-    <Input class="col-span-3" placeholder="url" bind:value={selectedRequest.url} type="url" />
+    <Codemirror
+      class="col-span-3"
+      placeholder="url"
+      variables={selectedCollectionEnvironment.vars}
+      value={selectedRequest.url}
+      updateValue={updateRequestUrl}
+    />
     <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
 

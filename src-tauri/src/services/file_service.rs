@@ -6,7 +6,7 @@ use crate::config::home;
 
 use crate::services::structs::CollectionConfig;
 
-use super::structs::{Environment, RequestOptions};
+use super::structs::RequestOptions;
 
 fn get_collections_path() -> String {
     let base_path = home::get();

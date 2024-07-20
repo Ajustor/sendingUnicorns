@@ -68,3 +68,8 @@ export function debounce(callback: Function, timeout = 300) {
         timer = setTimeout(() => { callback.apply(callback, args) }, timeout)
     }
 }
+
+
+export function get(object: Record<string, any>, path: string) {
+    return 'nope'
+}
