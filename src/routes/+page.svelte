@@ -23,7 +23,7 @@
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
-  import { Send } from 'lucide-svelte'
+  import { Pencil, Send } from 'lucide-svelte'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
   import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
   import { toast } from 'svelte-sonner'
@@ -31,12 +31,14 @@
     commands,
     type Request,
     type CollectionConfig,
-    type Result,
-    type RequestOptions,
-    type Options
+    type Options,
+    type Environment
   } from '../tauriApi'
   import { register } from '@tauri-apps/plugin-global-shortcut'
   import { debounce } from '@lib/utils'
+  import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
+  import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
+  import Mustache from 'mustache'
 
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
@@ -46,18 +48,7 @@
         })
         return
       }
-      invoke('update_collection', {
-        collectionName: requestCollection.name,
-        config: requestCollection
-      })
-        .then(() => {
-          toast.success('Collection mise à jours')
-        })
-        .catch((error) => {
-          toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
-            description: error
-          })
-        })
+      updateCollection()
     }
   })
 
@@ -77,9 +68,19 @@
 
   let collections: CollectionConfig[] = $state([])
   let selectedRequestId = $state('no-id')
+  let selectedEnvironmentId = $state('nope')
   let selectedRequest: Request = $derived(selectRequest())
   let requestCollection: null | CollectionConfig = $derived(getCollection())
+  let selectedCollectionEnvironment: null | Environment = $derived(selectEnvironment())
 
+  let selectedEnvironment = $derived(
+    selectedCollectionEnvironment?.name
+      ? {
+          label: selectedCollectionEnvironment.name,
+          value: selectedCollectionEnvironment.id
+        }
+      : undefined
+  )
   let selectedMethod = $derived(
     selectedRequest.method
       ? {
@@ -109,8 +110,24 @@
     return null
   }
 
+  function selectEnvironment() {
+    if (!requestCollection || !requestCollection.environments?.length) {
+      return null
+    }
+
+    const environment = requestCollection.environments.find(
+      ({ id }) => id === selectedEnvironmentId
+    )
+
+    if (environment) {
+      return environment
+    }
+
+    return null
+  }
+
   const createNewCollection = async (name: string) => {
-    const newCollectionToAdd: CollectionConfig = { name, requests: [] }
+    const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
     collections.push(newCollectionToAdd)
     toast.success('Collection créée')
@@ -128,12 +145,48 @@
     toast.success('Requête créée')
   }
 
+  const createNewEnvironment = async (name: string) => {
+    if (!requestCollection) {
+      return toast.error("Merci de selectionner une collecion avant d'y ajouter un environnement")
+    }
+
+    if (!requestCollection?.environments) {
+      requestCollection.environments = []
+    }
+    requestCollection.environments.push({ name, vars: [], id: 'nope' })
+
+    updateCollection()
+  }
+
+  const updateCollection = () => {
+    if (!requestCollection) {
+      return toast.error('Merci de selectionner la collection que vous voulez sauvegarder')
+    }
+    invoke('update_collection', {
+      collectionName: requestCollection.name,
+      config: requestCollection
+    })
+      .then(() => {
+        toast.success('Collection mise à jours')
+      })
+      .catch((error) => {
+        toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
+          description: error
+        })
+      })
+  }
+
   const getCollections = async () => {
     collections = await invoke('get_collections')
   }
 
   let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
+    const hasEnvVars = selectedCollectionEnvironment?.vars.length
+    const envVars = selectedCollectionEnvironment?.vars.reduce(
+      (acc, [key, value]) => ({ ...acc, [key]: value }),
+      {}
+    )
     if (!selectedRequest.url) {
       toast.error("Merci d'entrer une url")
       return
@@ -143,27 +196,49 @@
 
     sendRequestPromise = promise
 
-    const result = await commands.makeApiCall(selectedRequest.method, selectedRequest.url, {
-      ...selectedRequest.options,
-      body: selectedRequest.options.body.reduce(
-        (acc, [key, { is_active, value }]) => {
-          if (!key || !is_active) {
-            return acc
-          }
-          return [...acc, [key, value]]
-        },
-        [] as [unknown, unknown][]
-      ),
-      headers: selectedRequest.options.headers.reduce(
-        (acc, [key, { is_active, value }]) => {
-          if (!key || !is_active) {
-            return acc
-          }
-          return [...acc, [key, value]]
-        },
-        [] as [string, string][]
-      )
-    })
+    const result = await commands.makeApiCall(
+      selectedRequest.method,
+      hasEnvVars
+        ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
+        : selectedRequest.url,
+      {
+        ...selectedRequest.options,
+        body: selectedRequest.options.body.reduce(
+          (acc, [key, { is_active, value }]) => {
+            if (!key || !is_active) {
+              return acc
+            }
+            return [
+              ...acc,
+              [
+                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+                hasEnvVars
+                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                  : value
+              ]
+            ]
+          },
+          [] as [unknown, unknown][]
+        ),
+        headers: selectedRequest.options.headers.reduce(
+          (acc, [key, { is_active, value }]) => {
+            if (!key || !is_active) {
+              return acc
+            }
+            return [
+              ...acc,
+              [
+                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+                hasEnvVars
+                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                  : value
+              ]
+            ]
+          },
+          [] as [string, string][]
+        )
+      }
+    )
 
     if (result.status === 'error') {
       toast.error('Une erreur est survenue', { description: result.error })
@@ -270,6 +345,42 @@
   {/await}
 {/snippet}
 
+{#snippet environmentSelect()}
+  <span class="flex min-w-64 max-w-[50%] gap-2">
+    <Select
+      disabled={!requestCollection}
+      selected={selectedEnvironment}
+      onSelectedChange={(v) => {
+        v && (selectedEnvironmentId = v.value)
+      }}
+    >
+      <SelectTrigger class="col-span-1">
+        <SelectValue placeholder="Sélectionnez l'environnement" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {#if requestCollection?.environments}
+            <!-- content here -->
+            {#each requestCollection?.environments as { id, name }}
+              <SelectItem class="flex justify-between" value={id} label={name}>{name}</SelectItem>
+            {/each}
+            <!-- else content here -->
+          {/if}
+          <AddEnvironmentDialog onSend={createNewEnvironment} />
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+    {#if selectedCollectionEnvironment}
+      <!-- content here -->
+      <EditEnvironmentDialog
+        environmentName={selectedCollectionEnvironment.name}
+        bind:environmentVariables={selectedCollectionEnvironment.vars}
+        onSend={updateCollection}
+      />
+    {/if}
+  </span>
+{/snippet}
+
 {#await getCollections() then _}
   <aside class="h-full max-w-md border-r p-4">
     <AddCollectionDialog onSend={createNewCollection} />
@@ -302,7 +413,10 @@
 {/await}
 
 <div id="main" class="h-full w-full p-4">
-  <h1>{selectedRequest.name}</h1>
+  <div class="flex justify-between">
+    <h1>{selectedRequest.name}</h1>
+    {@render environmentSelect()}
+  </div>
   <div class="grid grid-cols-5 gap-2 p-2">
     <Select
       selected={selectedMethod}

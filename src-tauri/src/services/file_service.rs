@@ -6,7 +6,7 @@ use crate::config::home;
 
 use crate::services::structs::CollectionConfig;
 
-use super::structs::RequestOptions;
+use super::structs::{Environment, RequestOptions};
 
 fn get_collections_path() -> String {
     let base_path = home::get();
@@ -66,6 +66,15 @@ pub fn read_collection(collection_name: &str) -> CollectionConfig {
                 params: Some(Vec::new()),
             });
         }
+    }
+
+    match config.environments {
+        Some(ref mut environments) => {
+            for environment in environments {
+                environment.id = Some(Uuid::new_v4().to_string());
+            }
+        }
+        None => {}
     }
 
     return config;

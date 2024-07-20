@@ -6,6 +6,16 @@ use specta::{Any, Type};
 pub struct CollectionConfig {
     pub name: String,
     pub requests: Vec<Request>,
+    pub environments: Option<Vec<Environment>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Type)]
+pub struct Environment {
+    pub name: String,
+    #[specta(type = String)]
+    pub id: Option<String>,
+    #[specta(type = Vec<[String; 2]>)]
+    pub vars: Option<Vec<[String; 2]>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Type)]

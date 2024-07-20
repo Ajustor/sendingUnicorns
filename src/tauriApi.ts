@@ -33,7 +33,8 @@ await TAURI_INVOKE("update_collection", { collectionName, config });
 
 /** user-defined types **/
 
-export type CollectionConfig = { name: string; requests: Request[] }
+export type CollectionConfig = { name: string; requests: Request[]; environments: Environment[] | null }
+export type Environment = { name: string; id: string; vars: ([string, string])[] }
 export type Options = { is_active: boolean; value: any }
 export type Request = { name: string; url: string; method: string; id: string; pre_request_script: string | null; test: string | null; options: RequestOptions }
 export type RequestOptions = { body: ([string, Options])[]; params: ([string, Options])[]; headers: ([string, Options])[] }
