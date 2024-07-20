@@ -4,8 +4,7 @@
   import {
     EditorView,
     type EditorViewConfig,
-    placeholder as placeholderExt,
-    keymap
+    placeholder as placeholderExt
   } from '@codemirror/view'
   import { defineCodeMirrorCompletion, defineCodeMirrorLanguage, defineHover } from './extensions'
   import { minimalSetup } from 'codemirror'
@@ -16,12 +15,17 @@
     placeholder: string
     class: string
     variables: [string, string][]
-    updateValue: (url: string) => void
+    onkeyup?: () => void
   } & EditorViewConfig
 
-  let { value, placeholder, class: className, variables, updateValue, ...options }: Props = $props()
-
-  let update = debounce((doc: string) => updateValue(doc), 600)
+  let {
+    value = $bindable(),
+    placeholder,
+    class: className,
+    variables,
+    onkeyup = () => {},
+    ...options
+  }: Props = $props()
 
   const getState = (doc: string) =>
     EditorState.create({
@@ -95,7 +99,8 @@
         dispatch(transaction) {
           editor.update([transaction])
 
-          update(editor.state.doc.toString())
+          value = editor.state.doc.toString()
+          onkeyup()
         }
       })
     }

@@ -107,11 +107,6 @@
     return defaultRequest
   }
 
-  function updateRequestUrl(newUrl: string) {
-    console.log(newUrl)
-    selectedRequest.url = newUrl
-  }
-
   function getCollection() {
     for (const collection of collections) {
       const request = collection.requests.find(({ id }) => id === selectedRequestId)
@@ -217,11 +212,6 @@
 
     sendRequestPromise = promise
 
-    console.log(
-      selectedRequest.url,
-      Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
-    )
-
     const result = await commands.makeApiCall(
       selectedRequest.method,
       hasEnvVars
@@ -276,7 +266,7 @@
 
   const saveParams = debounce((params: [string, Options][]) => {
     selectedRequest.options.params = params
-  }, 500)
+  }, 600)
 
   const setParamsInUrl = debounce((url: string) => {
     const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
@@ -293,7 +283,7 @@
             .join('&')}`
         : ''
     }`
-  }, 500)
+  }, 600)
 
   $effect(() => {
     const [url, requestParams] = selectedRequest.url.split('?')
@@ -471,8 +461,7 @@
       class="col-span-3"
       placeholder="url"
       variables={selectedCollectionEnvironment.vars}
-      value={selectedRequest.url}
-      updateValue={updateRequestUrl}
+      bind:value={selectedRequest.url}
     />
     <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
