@@ -114,6 +114,6 @@ release:
     assets:
       links:
         - name: 'Sending Unicorns Windows.zip'
-          url: '$CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/tauri2/download?job=windows&file_type=archive'
+          url: '$CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/$CI_COMMIT_BRANCH/download?job=windows&file_type=archive'
         - name: 'Sending Unicorns Linux.zip'
-          url: '$CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/tauri2/download?job=linux&file_type=archive'
+          url: '$CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/$CI_COMMIT_BRANCH/download?job=linux&file_type=archive'

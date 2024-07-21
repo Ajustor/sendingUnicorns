@@ -39,7 +39,7 @@
   import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
   import Mustache from 'mustache'
-  import { Codemirror } from '@lib/components/codemirror'
+  import { CodemirrorSingleLine } from '@lib/components/codemirror'
 
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
@@ -337,6 +337,7 @@
 
 {#snippet configView()}
   <RequestConfig
+    variables={selectedCollectionEnvironment.vars}
     bind:requestOptions={selectedRequest.options}
     {addNewHeader}
     {addNewBodyField}
@@ -457,7 +458,7 @@
         </SelectGroup>
       </SelectContent>
     </Select>
-    <Codemirror
+    <CodemirrorSingleLine
       class="col-span-3"
       placeholder="url"
       variables={selectedCollectionEnvironment.vars}

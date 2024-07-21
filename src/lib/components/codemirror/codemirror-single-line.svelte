@@ -8,12 +8,11 @@
   } from '@codemirror/view'
   import { defineCodeMirrorCompletion, defineCodeMirrorLanguage, defineHover } from './extensions'
   import { minimalSetup } from 'codemirror'
-  import { debounce } from '@lib/utils'
 
   type Props = {
     value: string
     placeholder: string
-    class: string
+    class?: string
     variables: [string, string][]
     onkeyup?: () => void
   } & EditorViewConfig
