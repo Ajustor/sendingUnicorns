@@ -1,3 +1,3 @@
-import Codemirror from './codemirror.svelte'
+import CodemirrorSingleLine from './codemirror-single-line.svelte'
 
-export { Codemirror }
+export { CodemirrorSingleLine }
