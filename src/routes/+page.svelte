@@ -43,12 +43,6 @@
 
   register('CommandOrControl+S', (event) => {
     if (event.state === 'Pressed') {
-      if (!requestCollection) {
-        toast.info("Votre requête ne fait partie d'aucune collection", {
-          description: "Merci de créer votre collection avant d'enregistrer votre requête"
-        })
-        return
-      }
       updateCollection()
     }
   })
@@ -167,7 +161,9 @@
 
   const updateCollection = () => {
     if (!requestCollection) {
-      return toast.error('Merci de selectionner la collection que vous voulez sauvegarder')
+      return toast.error("Votre requête ne fait partie d'aucune collection", {
+        description: "Merci de créer votre collection avant d'enregistrer votre requête"
+      })
     }
     invoke('update_collection', {
       collectionName: requestCollection.name,
