@@ -33,7 +33,7 @@
         anchor: doc.length
       },
       extensions: [
-        minimalSetup,
+        // minimalSetup,
         placeholderExt(placeholder),
         defineCodeMirrorLanguage(variables),
         autocompletion({

@@ -11,18 +11,20 @@
 <ModeWatcher />
 <Toaster />
 
-<nav>
-  <Button title="Changer le thème" onclick={toggleMode}>
-    {#if $mode === 'light'}
-      <!-- content here -->
-      <Sun />
-    {:else}
-      <Moon />
-    {/if}
-  </Button>
-</nav>
 <div id="main-view">
-  {@render children()}
+  <nav>
+    <Button title="Changer le thème" onclick={toggleMode}>
+      {#if $mode === 'light'}
+        <!-- content here -->
+        <Sun />
+      {:else}
+        <Moon />
+      {/if}
+    </Button>
+  </nav>
+  <div class="flex">
+    {@render children()}
+  </div>
 </div>
 
 <style>
@@ -31,7 +33,8 @@
     justify-content: flex-end;
   }
   #main-view {
-    @apply h-full;
+    @apply h-full max-h-dvh overflow-hidden;
     display: flex;
+    flex-direction: column;
   }
 </style>

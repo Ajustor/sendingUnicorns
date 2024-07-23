@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Input } from '@lib/components/ui/input'
   import { Label } from '@lib/components/ui/label'
   import { Button } from '@lib/components/ui/button'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
@@ -40,12 +39,6 @@
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
   import Mustache from 'mustache'
   import { CodemirrorSingleLine } from '@lib/components/codemirror'
-
-  register('CommandOrControl+S', (event) => {
-    if (event.state === 'Pressed') {
-      updateCollection()
-    }
-  })
 
   let defaultRequest: Request = $state({
     name: 'nouvelle requête',
@@ -178,6 +171,13 @@
         })
       })
   }
+
+  register('CmdOrControl+S', (event) => {
+    if (event.state === 'Pressed') {
+      console.log('Shortcut triggered')
+      updateCollection()
+    }
+  })
 
   const getCollections = async () => {
     collections = await invoke('get_collections')
@@ -412,7 +412,8 @@
               <AccordionTrigger>{collection.name}</AccordionTrigger>
               <AccordionContent>
                 <AddRequestDialog
-                  onSend={(name: string, url: string, method: Method) => createNewRequest(collection, name, url, method)}
+                  onSend={(name: string, url: string, method: Method) =>
+                    createNewRequest(collection, name, url, method)}
                 />
                 <RadioGroup class="p-4" bind:value={selectedRequestId}>
                   {#each collection.requests as request}
@@ -431,7 +432,7 @@
   </aside>
 {/await}
 
-<div id="main" class="h-full w-full p-4">
+<div id="main">
   <div class="flex justify-between">
     <h1>{selectedRequest.name}</h1>
     {@render environmentSelect()}
@@ -493,6 +494,6 @@
   #main {
     display: flex;
     flex-direction: column;
-    @apply overflow-hidden;
+    @apply w-full overflow-hidden p-4;
   }
 </style>
