@@ -26,7 +26,7 @@ SetOutPath $INSTDIR
 File src-tauri/target/x86_64-pc-windows-gnu/release/*.*
 
 DetailPrint "Creating shortcut"
-CreateShortcut "$SMPROGRAMS\Sending Unicorns.lnk" "$INSTDIR\app.exe"
+CreateShortcut "$SMPROGRAMS\Sending Unicorns.lnk" "$INSTDIR\Sending Unicorns.exe"
 DetailPrint "Creating uninstaller"
 WriteUninstaller $INSTDIR\uninstaller.exe
 

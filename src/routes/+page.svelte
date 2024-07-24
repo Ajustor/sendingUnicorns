@@ -460,6 +460,10 @@
       placeholder="url"
       variables={selectedCollectionEnvironment.vars}
       bind:value={selectedRequest.url}
+      onCtrlS={() => {
+        updateCollection()
+        return true
+      }}
     />
     <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
