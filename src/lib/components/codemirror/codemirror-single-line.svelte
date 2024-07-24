@@ -1,13 +1,13 @@
 <script lang="ts">
   import { EditorState } from '@codemirror/state'
-  import { autocompletion, completionKeymap, currentCompletions } from '@codemirror/autocomplete'
+  import { autocompletion } from '@codemirror/autocomplete'
   import {
     EditorView,
     type EditorViewConfig,
-    placeholder as placeholderExt
+    placeholder as placeholderExt,
+    keymap
   } from '@codemirror/view'
   import { defineCodeMirrorCompletion, defineCodeMirrorLanguage, defineHover } from './extensions'
-  import { minimalSetup } from 'codemirror'
 
   type Props = {
     value: string
@@ -15,6 +15,7 @@
     class?: string
     variables: [string, string][]
     onkeyup?: () => void
+    onCtrlS?: () => boolean
   } & EditorViewConfig
 
   let {
@@ -23,6 +24,7 @@
     class: className,
     variables,
     onkeyup = () => {},
+    onCtrlS = () => true,
     ...options
   }: Props = $props()
 
@@ -33,7 +35,12 @@
         anchor: doc.length
       },
       extensions: [
-        // minimalSetup,
+        keymap.of([
+          {
+            key: 'Mod-s',
+            run: onCtrlS
+          }
+        ]),
         placeholderExt(placeholder),
         defineCodeMirrorLanguage(variables),
         autocompletion({

@@ -79,35 +79,10 @@ fn main() {
     let mut ctx = tauri::generate_context!();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
         .setup(|app| {
-            #[cfg(desktop)]
-            {
-                println!("Start shortcuts register");
-
-                use tauri::Manager;
-                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
-                println!("Start shortcuts register");
-
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["CommandOrControl+s"])?
-                        .with_handler(|app, shortcut, event| {
-                            println!("Shortcut is pressed {}", shortcut);
-                            if event.state == ShortcutState::Pressed {
-                                if shortcut.matches(Modifiers::CONTROL, Code::KeyS)
-                                    || shortcut.matches(Modifiers::SUPER, Code::KeyS)
-                                {
-                                    let _ = app.emit("shortcut-event", "save");
-                                }
-                            }
-                        })
-                        .build(),
-                )?;
-
-                println!("Shortcuts registered");
-            }
             register_events(app);
             Ok(())
         })

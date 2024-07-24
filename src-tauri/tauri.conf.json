@@ -54,6 +54,9 @@
         "center": true,
         "shadow": true
       }
-    ]
+    ],
+    "security": {
+      "capabilities": []
+    }
   }
 }
