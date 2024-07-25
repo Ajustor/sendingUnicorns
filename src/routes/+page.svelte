@@ -39,6 +39,7 @@
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
   import Mustache from 'mustache'
   import { CodemirrorSingleLine } from '@lib/components/codemirror'
+  import { Input } from '@lib/components/ui/input'
 
   let defaultRequest: Request = $state({
     name: 'nouvelle requête',
@@ -434,7 +435,7 @@
 
 <div id="main">
   <div class="flex justify-between">
-    <h1>{selectedRequest.name}</h1>
+    <Input bind:value={selectedRequest.name} class="border-0" />
     {@render environmentSelect()}
   </div>
   <div class="grid grid-cols-5 gap-2 p-2">

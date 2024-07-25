@@ -8,6 +8,7 @@
     keymap
   } from '@codemirror/view'
   import { defineCodeMirrorCompletion, defineCodeMirrorLanguage, defineHover } from './extensions'
+  import { mode } from 'mode-watcher'
 
   type Props = {
     value: string
@@ -79,6 +80,9 @@
             'padding-bottom': '0.5rem',
             'font-size': '0.875rem' /* 14px */,
             'line-height': '1.25rem' /* 20px */
+          },
+          '.cm-content': {
+            'caret-color': $mode === 'light' ? 'black' : 'white'
           },
           '.cm-scroller': {
             'overflow-y': 'hidden'

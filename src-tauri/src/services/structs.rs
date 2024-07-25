@@ -49,6 +49,12 @@ pub struct RequestOptions {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Type)]
+pub enum BodyTypes {
+    Json(Vec<(String, String)>),
+    FormData(Vec<(String, String)>),
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Type)]
 pub struct RequestParams {
     #[specta(type = Vec<[Any; 2]>)]
     pub body: Option<Vec<(String, Value)>>,

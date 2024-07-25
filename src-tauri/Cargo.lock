@@ -74,6 +74,7 @@ version = "0.1.0"
 dependencies = [
  "derivative",
  "home",
+ "proxy_cfg",
  "serde",
  "serde_json",
  "specta",
@@ -929,7 +930,7 @@ dependencies = [
  "rustc_version",
  "toml 0.8.13",
  "vswhom",
- "winreg",
+ "winreg 0.52.0",
 ]
 
 [[package]]
@@ -2838,6 +2839,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "proxy_cfg"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4873cd217803ccb250f2563adf3f7a128a6a2039a0aeb2417a58130a079748b4"
+dependencies = [
+ "core-foundation",
+ "system-configuration-sys",
+ "url",
+ "winapi",
+ "winreg 0.9.0",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3055,7 +3069,7 @@ dependencies = [
  "wasm-streams",
  "web-sys",
  "webpki-roots",
- "winreg",
+ "winreg 0.52.0",
 ]
 
 [[package]]
@@ -5146,6 +5160,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3c52e9c97a68071b23e836c9380edae937f17b9c4667bd021973efc689f618d"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "winreg"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16cdb3898397cf7f624c294948669beafaeebc5577d5ec53d0afb76633593597"
+dependencies = [
+ "winapi",
 ]
 
 [[package]]

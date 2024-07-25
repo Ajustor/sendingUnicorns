@@ -1,7 +1,10 @@
 use std::{collections::HashMap, str::FromStr};
 
 use serde_json::Value;
-use tauri::http::{HeaderMap, HeaderName, HeaderValue};
+use tauri::{
+    http::{HeaderMap, HeaderName, HeaderValue},
+    Url,
+};
 use tauri_plugin_http::reqwest::{self, Error, RequestBuilder};
 
 use super::structs::RequestParams;
@@ -15,6 +18,12 @@ pub async fn call(
         reqwest::Client::builder().danger_accept_invalid_certs(true);
 
     client_builder = add_headers_to_client(client_builder, request_options.headers);
+
+    if let Ok(Some(proxy_config)) = proxy_cfg::get_proxy_config() {
+        if let Some(proxy_address) = proxy_config.get_proxy_for_url(&Url::parse(&url).unwrap()) {
+            client_builder = client_builder.proxy(reqwest::Proxy::http(proxy_address)?);
+        }
+    }
 
     let request = client_builder.build().unwrap();
 
@@ -79,8 +88,11 @@ fn add_body_to_request(
     request_builder: RequestBuilder,
     body: Option<Vec<(String, Value)>>,
 ) -> RequestBuilder {
+    println!("Sending request with body {:?}", body);
+
     match body {
         None => {
+            println!("Sending request with not body {:?}", body);
             return request_builder;
         }
         Some(existing_body) => {
@@ -88,6 +100,8 @@ fn add_body_to_request(
                 .into_iter() // chunks_exact returns an iterator of slices
                 .map(|chunk| (chunk.0, chunk.1)) // map slices to tuples
                 .collect::<HashMap<String, Value>>();
+            println!("Sending request with body parsed as {:?}", json_data);
+
             if json_data.keys().len() != 0 {
                 return request_builder.json(&json_data);
             }
