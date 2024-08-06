@@ -31,15 +31,18 @@
     type Request,
     type CollectionConfig,
     type Options,
-    type Environment
+    type Environment,
+    type BodyTypes,
+    type BodyTypesEnum
   } from '../tauriApi'
   import { register } from '@tauri-apps/plugin-global-shortcut'
   import { debounce } from '@lib/utils'
   import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
   import Mustache from 'mustache'
-  import { CodemirrorSingleLine } from '@lib/components/codemirror'
+  import { Codemirror } from '@lib/components/codemirror'
   import { Input } from '@lib/components/ui/input'
+  import { BodyTypeEnum } from '@enums/bodyTypes'
 
   let defaultRequest: Request = $state({
     name: 'nouvelle requête',
@@ -47,7 +50,7 @@
     method: Method.GET,
     id: 'no-id',
     options: {
-      body: [],
+      body: { form_data: [], json: '' },
       headers: [],
       params: []
     },
@@ -67,6 +70,8 @@
   let selectedRequest: Request = $derived(selectRequest())
   let requestCollection: null | CollectionConfig = $derived(getCollection())
   let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
+  let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
+  let needRedrawOfConfig = $state(false)
 
   let selectedEnvironment = $derived(
     selectedCollectionEnvironment?.name
@@ -109,14 +114,17 @@
     if (!requestCollection || !requestCollection.environments?.length) {
       return defaultEnvironment
     }
+    needRedrawOfConfig = true
 
     const environment = requestCollection.environments.find(
       ({ id }) => id === selectedEnvironmentId
     )
 
     if (environment) {
+      needRedrawOfConfig = false
       return environment
     }
+    needRedrawOfConfig = false
 
     return defaultEnvironment
   }
@@ -209,6 +217,38 @@
 
     sendRequestPromise = promise
 
+    function getBody(): BodyTypes {
+      return {
+        json: Mustache.render(
+          selectedRequest.options.body.json,
+          envVars,
+          {},
+          { escape: (s: string) => s }
+        ),
+        form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
+          (acc, [key, { is_active, value }]) => {
+            if (!key || !is_active) {
+              return acc
+            }
+            return [
+              ...acc,
+              [
+                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+                {
+                  is_active,
+                  value:
+                    hasEnvVars && typeof value === 'string'
+                      ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                      : value
+                }
+              ]
+            ]
+          },
+          []
+        )
+      }
+    }
+
     const result = await commands.makeApiCall(
       selectedRequest.method,
       hasEnvVars
@@ -216,7 +256,8 @@
         : selectedRequest.url,
       {
         ...selectedRequest.options,
-        body: selectedRequest.options.body.reduce(
+        body: getBody(),
+        headers: selectedRequest.options.headers.reduce<[string, string][]>(
           (acc, [key, { is_active, value }]) => {
             if (!key || !is_active) {
               return acc
@@ -225,32 +266,16 @@
               ...acc,
               [
                 hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                hasEnvVars
+                hasEnvVars && typeof value === 'string'
                   ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                  : value
+                  : `${value}`
               ]
             ]
           },
-          [] as [unknown, unknown][]
-        ),
-        headers: selectedRequest.options.headers.reduce(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                hasEnvVars
-                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                  : value
-              ]
-            ]
-          },
-          [] as [string, string][]
+          []
         )
-      }
+      },
+      bodyType
     )
 
     if (result.status === 'error') {
@@ -311,7 +336,7 @@
   }
 
   function addNewBodyField() {
-    selectedRequest.options.body.push(['', { is_active: true, value: '' }])
+    selectedRequest.options.body.form_data.push(['', { is_active: true, value: '' }])
   }
 
   function addNewParamField() {
@@ -322,8 +347,9 @@
   }
 
   function deleteBody(i: number) {
-    selectedRequest.options.body.splice(i, 1)
+    selectedRequest.options.body.form_data.splice(i, 1)
   }
+
   function deleteHeader(i: number) {
     selectedRequest.options.headers.splice(i, 1)
   }
@@ -333,17 +359,21 @@
 </script>
 
 {#snippet configView()}
-  <RequestConfig
-    variables={selectedCollectionEnvironment.vars}
-    bind:requestOptions={selectedRequest.options}
-    {addNewHeader}
-    {addNewBodyField}
-    {addNewParamField}
-    {deleteBody}
-    {deleteHeader}
-    {deleteParam}
-    {setParamsToUrl}
-  />
+  {#if !needRedrawOfConfig}
+    <!-- content here -->
+    <RequestConfig
+      variables={selectedCollectionEnvironment.vars}
+      bind:bodyType
+      bind:requestOptions={selectedRequest.options}
+      {addNewHeader}
+      {addNewBodyField}
+      {addNewParamField}
+      {deleteBody}
+      {deleteHeader}
+      {deleteParam}
+      {setParamsToUrl}
+    />
+  {/if}
 {/snippet}
 
 {#snippet resultView()}
@@ -456,7 +486,7 @@
         </SelectGroup>
       </SelectContent>
     </Select>
-    <CodemirrorSingleLine
+    <Codemirror
       class="col-span-3"
       placeholder="url"
       variables={selectedCollectionEnvironment.vars}

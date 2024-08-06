@@ -4,24 +4,19 @@
   import { Toaster } from '$lib/components/ui/sonner'
   import { Moon, Sun } from 'lucide-svelte'
   import { Button } from '@lib/components/ui/button'
+  import { listen } from '@tauri-apps/api/event'
 
   let { children } = $props()
+  listen('toggle-theme', () => {
+    toggleMode()
+  })
 </script>
 
 <ModeWatcher />
 <Toaster />
 
 <div id="main-view">
-  <nav>
-    <Button title="Changer le thème" onclick={toggleMode}>
-      {#if $mode === 'light'}
-        <!-- content here -->
-        <Sun />
-      {:else}
-        <Moon />
-      {/if}
-    </Button>
-  </nav>
+  <nav></nav>
   <div class="flex">
     {@render children()}
   </div>
@@ -31,6 +26,7 @@
   nav {
     display: flex;
     justify-content: flex-end;
+    @apply p-2;
   }
   #main-view {
     @apply h-full max-h-dvh overflow-hidden;
