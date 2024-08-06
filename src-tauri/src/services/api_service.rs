@@ -7,12 +7,13 @@ use tauri::{
 };
 use tauri_plugin_http::reqwest::{self, Error, RequestBuilder};
 
-use super::structs::RequestParams;
+use super::structs::{BodyTypes, BodyTypesEnum, DynamicValue, RequestParams};
 
 pub async fn call(
     method: String,
     url: String,
     request_options: RequestParams,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
     let mut client_builder: reqwest::ClientBuilder =
         reqwest::Client::builder().danger_accept_invalid_certs(true);
@@ -28,34 +29,37 @@ pub async fn call(
     let request = client_builder.build().unwrap();
 
     if method == "get" {
-        return get(request, url, request_options.body).await;
+        return get(request, url, request_options.body, body_type).await;
     }
 
     if method == "post" {
-        return post(request, url, request_options.body).await;
+        return post(request, url, request_options.body, body_type).await;
     }
 
     if method == "patch" {
-        return patch(request, url, request_options.body).await;
+        return patch(request, url, request_options.body, body_type).await;
     }
 
     if method == "put" {
-        return put(request, url, request_options.body).await;
+        return put(request, url, request_options.body, body_type).await;
     }
 
     if method == "delete" {
-        return delete(request, url, request_options.body).await;
+        return delete(request, url, request_options.body, body_type).await;
     }
 
-    return get(request, url, request_options.body).await;
+    return get(request, url, request_options.body, body_type).await;
 }
 
 async fn get(
     request: reqwest::Client,
     url: String,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
-    let resp = add_body_to_request(request.get(url), body).send().await;
+    let resp = add_body_to_request(request.get(url), body, body_type)
+        .send()
+        .await;
 
     if resp.is_err() {
         return Err(resp.err().unwrap());
@@ -86,7 +90,8 @@ fn add_headers_to_client(
 
 fn add_body_to_request(
     request_builder: RequestBuilder,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> RequestBuilder {
     println!("Sending request with body {:?}", body);
 
@@ -96,15 +101,28 @@ fn add_body_to_request(
             return request_builder;
         }
         Some(existing_body) => {
-            let json_data = existing_body
-                .into_iter() // chunks_exact returns an iterator of slices
-                .map(|chunk| (chunk.0, chunk.1)) // map slices to tuples
-                .collect::<HashMap<String, Value>>();
-            println!("Sending request with body parsed as {:?}", json_data);
+            match body_type {
+                BodyTypesEnum::FormData => {
+                    let form_data = existing_body
+                        .form_data
+                        .into_iter() // chunks_exact returns an iterator of slices
+                        .filter_map(|chunk| chunk.1.is_active.then(|| (chunk.0, chunk.1.value))) // map slices to tuples
+                        .collect::<HashMap<String, DynamicValue>>();
 
-            if json_data.keys().len() != 0 {
-                return request_builder.json(&json_data);
+                    return request_builder.form(&form_data);
+                }
+                BodyTypesEnum::Json => {
+                    let parsed_body: HashMap<String, Value> =
+                        serde_json::from_str(&existing_body.json)
+                            .expect("JSON was not well-formatted");
+                    println!("Sending request with body parsed as {:?}", parsed_body);
+
+                    if parsed_body.keys().len() != 0 {
+                        return request_builder.json(&parsed_body);
+                    }
+                }
             }
+
             return request_builder;
         }
     };
@@ -113,9 +131,12 @@ fn add_body_to_request(
 async fn post(
     client: reqwest::Client,
     url: String,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
-    let resp = add_body_to_request(client.post(url), body).send().await;
+    let resp = add_body_to_request(client.post(url), body, body_type)
+        .send()
+        .await;
 
     if resp.is_err() {
         return Err(resp.err().unwrap());
@@ -127,9 +148,12 @@ async fn post(
 async fn patch(
     client: reqwest::Client,
     url: String,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
-    let resp = add_body_to_request(client.patch(url), body).send().await;
+    let resp = add_body_to_request(client.patch(url), body, body_type)
+        .send()
+        .await;
 
     if resp.is_err() {
         return Err(resp.err().unwrap());
@@ -141,9 +165,12 @@ async fn patch(
 async fn put(
     client: reqwest::Client,
     url: String,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
-    let resp = add_body_to_request(client.put(url), body).send().await;
+    let resp = add_body_to_request(client.put(url), body, body_type)
+        .send()
+        .await;
 
     if resp.is_err() {
         return Err(resp.err().unwrap());
@@ -155,9 +182,12 @@ async fn put(
 async fn delete(
     client: reqwest::Client,
     url: String,
-    body: Option<Vec<(String, Value)>>,
+    body: Option<BodyTypes>,
+    body_type: BodyTypesEnum,
 ) -> Result<String, Error> {
-    let resp = add_body_to_request(client.delete(url), body).send().await;
+    let resp = add_body_to_request(client.delete(url), body, body_type)
+        .send()
+        .await;
 
     if resp.is_err() {
         return Err(resp.err().unwrap());

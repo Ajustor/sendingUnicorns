@@ -4,9 +4,9 @@
          /** user-defined commands **/
 
          export const commands = {
-async makeApiCall(method: string, url: string, options: RequestParams) : Promise<Result<string, string>> {
+async makeApiCall(method: string, url: string, options: RequestParams, bodyType: BodyTypesEnum) : Promise<Result<string, string>> {
 try {
-    return { status: "ok", data: await TAURI_INVOKE("make_api_call", { method, url, options }) };
+    return { status: "ok", data: await TAURI_INVOKE("make_api_call", { method, url, options, bodyType }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -33,12 +33,15 @@ await TAURI_INVOKE("update_collection", { collectionName, config });
 
 /** user-defined types **/
 
+export type BodyTypes = { json: string; form_data: ([string, Options])[] }
+export type BodyTypesEnum = "Json" | "FormData"
 export type CollectionConfig = { name: string; requests: Request[]; environments: Environment[] | null }
+export type DynamicValue = string | number | boolean | null
 export type Environment = { name: string; id: string; vars: ([string, string])[] }
-export type Options = { is_active: boolean; value: any }
+export type Options = { is_active: boolean; value: DynamicValue }
 export type Request = { name: string; url: string; method: string; id: string; pre_request_script: string | null; test: string | null; options: RequestOptions }
-export type RequestOptions = { body: ([string, Options])[]; params: ([string, Options])[]; headers: ([string, Options])[] }
-export type RequestParams = { body: ([any, any])[]; params: ([any, any])[]; headers: ([string, string])[] }
+export type RequestOptions = { body: BodyTypes; params: ([string, Options])[]; headers: ([string, Options])[] }
+export type RequestParams = { body: BodyTypes | null; params: ([any, any])[]; headers: ([string, string])[] }
 
 /** tauri-specta globals **/
 
