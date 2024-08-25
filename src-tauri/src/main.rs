@@ -7,8 +7,9 @@ mod services;
 
 use services::structs::{BodyTypesEnum, RequestParams};
 use tauri::image::Image;
-use tauri::menu::{CheckMenuItem, IconMenuItem, Menu, MenuBuilder, MenuItem};
+use tauri::menu::{CheckMenuItem, IconMenuItem, Menu, MenuBuilder, MenuItem, Submenu};
 use tauri::{EventTarget, Manager};
+use tauri_plugin_global_shortcut::Modifiers;
 
 use crate::config::home;
 use crate::services::{api_service, file_service, structs};
@@ -109,7 +110,23 @@ fn main() {
                 Some(app.default_window_icon().cloned().unwrap()),
                 None::<&str>,
             )?;
-            let menu = MenuBuilder::new(app).item(&theme_change).build()?;
+
+            let file_menu_items = [&MenuItem::with_id(
+                app,
+                "save",
+                "Save",
+                true,
+                Some(Accelerator::new(Some(Modifiers::Super), Code::KeyS)),
+            )];
+
+            let file_menu =
+                Submenu::with_id_and_items(app, "files", "File", true, &file_menu_items);
+            // file_menu.append_items(MenuItem::with_id(app, "save", "Save", true, None::<&str>));
+
+            let menu = MenuBuilder::new(app)
+                // .item(&file_menu)
+                .item(&theme_change)
+                .build()?;
 
             app.set_menu(menu)?;
 
