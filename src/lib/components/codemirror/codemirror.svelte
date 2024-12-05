@@ -46,13 +46,6 @@
         }
       ]),
       placeholderExt(placeholder),
-      defineCodeMirrorLanguage(variables),
-      autocompletion({
-        defaultKeymap: true,
-        activateOnTyping: true,
-        override: [defineCodeMirrorCompletion(variables)]
-      }),
-      defineHover(variables),
       EditorView.theme({
         '.valid': {
           color: 'green'
@@ -78,6 +71,18 @@
         }
       })
     ]
+
+    if (localVariables.length) {
+      extensions.push(
+        defineCodeMirrorLanguage(localVariables),
+        autocompletion({
+          defaultKeymap: true,
+          activateOnTyping: true,
+          override: [defineCodeMirrorCompletion(localVariables)]
+        }),
+        defineHover(localVariables)
+      )
+    }
 
     if (isSingleLine) {
       extensions.push(

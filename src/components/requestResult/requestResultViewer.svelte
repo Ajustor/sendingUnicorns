@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Tabs, TabsList, TabsContent, TabsTrigger } from '@lib/components/ui/tabs'
-  import { ScrollArea } from '@lib/components/ui/scroll-area'
   import { Codemirror } from '@lib/components/codemirror'
 
   export let result: string
@@ -8,13 +7,17 @@
 
 <Tabs class="h-dvh w-full">
   <TabsList>
-    <TabsTrigger value="raw">Résultat</TabsTrigger>
-    <TabsTrigger value="preview">Prévisualisation</TabsTrigger>
+    <TabsTrigger value="raw">Result</TabsTrigger>
+    <TabsTrigger value="preview">Preview</TabsTrigger>
   </TabsList>
-  <TabsContent value="raw">
-    <ScrollArea>
-      <Codemirror class="col-span-3" placeholder="url" variables={[]} bind:value={result} />
-    </ScrollArea>
+  <TabsContent value="raw" class="h-3/4 overflow-scroll">
+    <Codemirror
+      class="col-span-3"
+      placeholder="result"
+      isSingleLine={false}
+      variables={[]}
+      bind:value={result}
+    />
   </TabsContent>
   <TabsContent class="h-full" value="preview">
     <iframe class="h-full w-full" srcdoc={result} title="résultat de la requête"></iframe>
