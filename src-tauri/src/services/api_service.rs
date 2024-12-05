@@ -9,6 +9,11 @@ use tauri_plugin_http::reqwest::{self, Error, RequestBuilder};
 
 use super::structs::{BodyTypes, BodyTypesEnum, DynamicValue, RequestParams};
 
+pub enum JsonParseType {
+    Json(HashMap<String, Value>),
+    Err(String),
+}
+
 pub async fn call(
     method: String,
     url: String,
@@ -112,14 +117,22 @@ fn add_body_to_request(
                     return request_builder.form(&form_data);
                 }
                 BodyTypesEnum::Json => {
-                    let parsed_body: HashMap<String, Value> =
-                        serde_json::from_str(&existing_body.json)
-                            .expect("JSON was not well-formatted");
-                    println!("Sending request with body parsed as {:?}", parsed_body);
+                    let parsed_body: JsonParseType = match serde_json::from_str(&existing_body.json)
+                    {
+                        Ok(json_value) => JsonParseType::Json(json_value),
+                        Err(err) => JsonParseType::Err(err.to_string()),
+                    };
 
-                    if parsed_body.keys().len() != 0 {
-                        return request_builder.json(&parsed_body);
-                    }
+                    match parsed_body {
+                        JsonParseType::Json(body) => {
+                            println!("Sending request with body parsed as {:?}", body);
+
+                            if body.keys().len() != 0 {
+                                return request_builder.json(&body);
+                            }
+                        }
+                        JsonParseType::Err(_) => return request_builder,
+                    };
                 }
             }
 
