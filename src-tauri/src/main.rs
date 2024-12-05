@@ -6,9 +6,10 @@ mod config;
 mod services;
 
 use services::structs::{BodyTypesEnum, RequestParams};
-use tauri::image::Image;
-use tauri::menu::{CheckMenuItem, IconMenuItem, Menu, MenuBuilder, MenuItem};
-use tauri::{EventTarget, Manager};
+use specta_typescript::Typescript;
+use tauri::menu::{CheckMenuItem, IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
+use tauri::{Emitter, EventTarget};
+use tauri_specta::{collect_commands, Builder};
 
 use crate::config::home;
 use crate::services::{api_service, file_service, structs};
@@ -73,43 +74,65 @@ fn main() {
         return;
     }
 
-    // configure the menu
+    let mut builder = Builder::<tauri::Wry>::new()
+        // Then register them (separated by a comma)
+        .commands(collect_commands![
+            make_api_call,
+            create_collection,
+            get_collections,
+            update_collection
+        ]);
 
-    let (invoke_handler, register_events) = {
-        // You can use `tauri_specta::js::builder` for exporting JS Doc instead of Typescript!`
-        let builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![
-                make_api_call,
-                create_collection,
-                get_collections,
-                update_collection
-            ])
-            .events(tauri_specta::collect_events![]); // <- Each of your commands
+    builder
+        .export(Typescript::default(), "../src/tauriApi.ts")
+        .expect("Failed to export typescript bindings");
 
-        #[cfg(debug_assertions)] // <- Only export on non-release builds
-        let builder = builder.path("../src/tauriApi.ts");
-
-        builder.build().unwrap()
-    };
-
-    let mut ctx = tauri::generate_context!();
+    let mut ctx = tauri::generate_context!("./tauri.conf.json");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
+        .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
-            register_events(app);
+            let handle = app.handle();
+
+            builder.mount_events(app);
 
             let theme_change = IconMenuItem::with_id(
                 app,
                 "toggle-theme",
-                "Changer de mode (Sombre/clair)",
+                "Switch theme",
                 true,
                 Some(app.default_window_icon().cloned().unwrap()),
                 None::<&str>,
             )?;
-            let menu = MenuBuilder::new(app).item(&theme_change).build()?;
+            let save_button =
+                MenuItem::with_id(handle, "save", "Save", true, Some("cmdOrControl+S"))?;
+            let file_submenu = SubmenuBuilder::new(handle, "File")
+                .item(&save_button)
+                .items(&[&CheckMenuItem::new(
+                    handle,
+                    "CheckMenuItem 1",
+                    true,
+                    true,
+                    None::<&str>,
+                )?])
+                .separator()
+                .cut()
+                .copy()
+                .paste()
+                .separator()
+                .text("item2", "MenuItem 2")
+                .check("checkitem2", "CheckMenuItem 2")
+                .icon(
+                    "iconitem2",
+                    "IconMenuItem 2",
+                    app.default_window_icon().cloned().unwrap(),
+                )
+                .build()?;
+            let menu = MenuBuilder::new(app)
+                .items(&[&file_submenu, &theme_change])
+                .build()?;
 
             app.set_menu(menu)?;
 
@@ -117,11 +140,14 @@ fn main() {
                 if event.id() == theme_change.id() {
                     let _ = handler.emit_to(EventTarget::app(), "toggle-theme", {});
                 }
+
+                if event.id() == save_button.id() {
+                    let _ = handler.emit_to(EventTarget::app(), "save", {});
+                }
             });
 
             Ok(())
         })
-        .invoke_handler(invoke_handler)
         .run(ctx)
         .expect("error while running tauri application");
 }

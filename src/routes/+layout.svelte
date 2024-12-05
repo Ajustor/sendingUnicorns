@@ -2,8 +2,6 @@
   import '../app.css'
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher'
   import { Toaster } from '$lib/components/ui/sonner'
-  import { Moon, Sun } from 'lucide-svelte'
-  import { Button } from '@lib/components/ui/button'
   import { listen } from '@tauri-apps/api/event'
 
   let { children } = $props()

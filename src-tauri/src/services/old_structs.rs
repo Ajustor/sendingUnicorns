@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use super::structs::{BodyTypes, Environment, Options};
+use super::structs::{Environment, Options};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OldCollectionConfig {

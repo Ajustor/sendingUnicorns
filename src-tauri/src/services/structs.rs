@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use specta::{Any, Type};
+use specta::Type;
 
 #[derive(Debug, Deserialize, Serialize, Type, Clone)]
 pub struct CollectionConfig {
@@ -71,7 +71,6 @@ pub struct BodyTypes {
 #[derive(Debug, Deserialize, Serialize, Clone, Type)]
 pub struct RequestParams {
     pub body: Option<BodyTypes>,
-    #[specta(type = Vec<[Any; 2]>)]
     pub params: Option<Vec<(String, Value)>>,
     #[specta(type = Vec<[String; 2]>)]
     pub headers: Option<Vec<[String; 2]>>,

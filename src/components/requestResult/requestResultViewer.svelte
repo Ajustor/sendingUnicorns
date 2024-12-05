@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Tabs, TabsList, TabsContent, TabsTrigger } from '@lib/components/ui/tabs'
   import { ScrollArea } from '@lib/components/ui/scroll-area'
+  import { Codemirror } from '@lib/components/codemirror'
 
   export let result: string
 </script>
@@ -12,9 +13,7 @@
   </TabsList>
   <TabsContent value="raw">
     <ScrollArea>
-      <p class="max-h-dvh max-w-prose">
-        {result}
-      </p>
+      <Codemirror class="col-span-3" placeholder="url" variables={[]} bind:value={result} />
     </ScrollArea>
   </TabsContent>
   <TabsContent class="h-full" value="preview">

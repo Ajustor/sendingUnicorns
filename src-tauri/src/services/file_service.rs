@@ -7,7 +7,7 @@ use crate::config::home;
 use crate::services::old_structs::OldBodyTypes;
 use crate::services::structs::{BodyTypes, CollectionConfig, Options};
 
-use super::old_structs::{BodyTypesConverter, OldCollectionConfig, OldRequestOptions};
+use super::old_structs::{BodyTypesConverter, OldCollectionConfig};
 use super::structs::{Request, RequestOptions};
 
 fn get_collections_path() -> String {

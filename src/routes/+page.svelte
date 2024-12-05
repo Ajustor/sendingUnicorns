@@ -35,7 +35,6 @@
     type BodyTypes,
     type BodyTypesEnum
   } from '../tauriApi'
-  import { register } from '@tauri-apps/plugin-global-shortcut'
   import { debounce } from '@lib/utils'
   import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
   import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
@@ -43,9 +42,10 @@
   import { Codemirror } from '@lib/components/codemirror'
   import { Input } from '@lib/components/ui/input'
   import { BodyTypeEnum } from '@enums/bodyTypes'
+  import { listen } from '@tauri-apps/api/event'
 
   let defaultRequest: Request = $state({
-    name: 'nouvelle requête',
+    name: 'New request',
     url: '',
     method: Method.GET,
     id: 'no-id',
@@ -59,7 +59,7 @@
   })
 
   let defaultEnvironment: Environment = $state({
-    name: 'défaut',
+    name: 'default',
     id: 'nope',
     vars: []
   })
@@ -133,7 +133,7 @@
     const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
     collections.push(newCollectionToAdd)
-    toast.success('Collection créée')
+    toast.success('Collection created')
   }
 
   const createNewRequest = async (
@@ -145,7 +145,7 @@
     collection.requests.push({ ...defaultRequest, name, url, method })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
     collections = await invoke('get_collections')
-    toast.success('Requête créée')
+    toast.success('Request created')
   }
 
   const createNewEnvironment = async (name: string) => {
@@ -160,6 +160,10 @@
 
     updateCollection()
   }
+
+  listen('save', () => {
+    updateCollection()
+  })
 
   const updateCollection = () => {
     if (!requestCollection) {
@@ -180,13 +184,6 @@
         })
       })
   }
-
-  register('CmdOrControl+S', (event) => {
-    if (event.state === 'Pressed') {
-      console.log('Shortcut triggered')
-      updateCollection()
-    }
-  })
 
   const getCollections = async () => {
     collections = await invoke('get_collections')
@@ -491,10 +488,6 @@
       placeholder="url"
       variables={selectedCollectionEnvironment.vars}
       bind:value={selectedRequest.url}
-      onCtrlS={() => {
-        updateCollection()
-        return true
-      }}
     />
     <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
   </div>
