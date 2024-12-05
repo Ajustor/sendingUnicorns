@@ -74,7 +74,7 @@ fn main() {
         return;
     }
 
-    let mut builder = Builder::<tauri::Wry>::new()
+    let builder = Builder::<tauri::Wry>::new()
         // Then register them (separated by a comma)
         .commands(collect_commands![
             make_api_call,
