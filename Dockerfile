@@ -1,7 +1,7 @@
 FROM rust:bookworm AS base
 
 RUN apt update
-RUN apt install libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev -y
+RUN apt install libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev libxdo-dev -y
 RUN cargo install tauri-cli@=2.0.0-beta.22
 
 RUN curl -fsSL https://bun.sh/install | bash
