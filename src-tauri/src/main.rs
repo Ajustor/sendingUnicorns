@@ -95,6 +95,7 @@ fn main() {
     let mut ctx = tauri::generate_context!();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
