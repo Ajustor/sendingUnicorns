@@ -1,5 +1,5 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:5173",
@@ -10,6 +10,7 @@
   "plugins": {},
   "identifier": "ajustor.sending-unicorns",
   "bundle": {
+    "createUpdaterArtifacts": true,
     "publisher": "Ajustor",
     "active": true,
     "category": "DeveloperTool",
@@ -40,6 +41,10 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper",
         "silent": false
+      },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "icons/sendingUnicorns.png"
       }
     }
   },
