@@ -20,6 +20,6 @@
     />
   </TabsContent>
   <TabsContent class="h-full" value="preview">
-    <iframe class="h-full w-full" srcdoc={result} title="résultat de la requête"></iframe>
+    <iframe class="h-full w-full" srcdoc={result} title="Request's result"></iframe>
   </TabsContent>
 </Tabs>

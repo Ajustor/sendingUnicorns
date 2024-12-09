@@ -104,8 +104,12 @@ fn main() {
                 "Switch theme",
                 true,
                 Some(app.default_window_icon().cloned().unwrap()),
-                None::<&str>,
+                Some("cmdOrControl+T"),
             )?;
+            let view_submenu = SubmenuBuilder::new(handle, "View")
+                .items(&[&theme_change])
+                .build()?;
+
             let save_button =
                 MenuItem::with_id(handle, "save", "Save", true, Some("cmdOrControl+S"))?;
             let file_submenu = SubmenuBuilder::new(handle, "File")
@@ -122,16 +126,17 @@ fn main() {
                 .copy()
                 .paste()
                 .separator()
-                .text("item2", "MenuItem 2")
-                .check("checkitem2", "CheckMenuItem 2")
-                .icon(
-                    "iconitem2",
-                    "IconMenuItem 2",
-                    app.default_window_icon().cloned().unwrap(),
-                )
+                // .text("item2", "MenuItem 2")
+                // .check("checkitem2", "CheckMenuItem 2")
+                // .icon(
+                //     "iconitem2",
+                //     "IconMenuItem 2",
+                //     app.default_window_icon().cloned().unwrap(),
+                // )
                 .build()?;
+
             let menu = MenuBuilder::new(app)
-                .items(&[&file_submenu, &theme_change])
+                .items(&[&file_submenu, &view_submenu])
                 .build()?;
 
             app.set_menu(menu)?;

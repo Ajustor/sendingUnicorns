@@ -43,20 +43,20 @@
 
 <Dialog closeOnOutsideClick>
   <DialogTrigger>
-    <Button title="Ajouter une requête" class="gap-2">Ajouter une requête<Plus /></Button>
+    <Button title="Create a request" class="gap-2">Create a request<Plus /></Button>
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Ajouter une requête</DialogTitle>
-      <DialogDescription>Entrez les informations relatives à votre requête</DialogDescription>
+      <DialogTitle>Create a request</DialogTitle>
+      <DialogDescription>Enter request informations</DialogDescription>
     </DialogHeader>
     <div class="grid gap-4 py-4">
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="name" class="text-right">Nom de votre requête</Label>
+        <Label for="name" class="text-right">Request's name</Label>
         <Input id="name" bind:value={name} placeholder="Val Jean Jean" class="col-span-3" />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="url" class="text-right">L'url de votre requête</Label>
+        <Label for="url" class="text-right">Request's url</Label>
         <Input
           id="url"
           bind:value={url}
@@ -65,7 +65,7 @@
         />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="method" class="text-right">la méthode de votre requête</Label>
+        <Label for="method" class="text-right">Request method</Label>
         <Select
           selected={selectedMethod}
           onSelectedChange={(event) => {
@@ -73,7 +73,7 @@
           }}
         >
           <SelectTrigger class="col-span-3">
-            <SelectValue placeholder="Sélectionnez la méthode" />
+            <SelectValue placeholder="Select method" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -92,7 +92,7 @@
           onSend(name, url, method)
         }}
       >
-        Sauvegarder
+        Save
       </Close>
     </DialogFooter>
   </DialogContent>

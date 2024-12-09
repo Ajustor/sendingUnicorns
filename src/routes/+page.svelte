@@ -1,358 +1,356 @@
 <script lang="ts">
-  import { Label } from '@lib/components/ui/label'
-  import { Button } from '@lib/components/ui/button'
-  import { ScrollArea } from '@lib/components/ui/scroll-area'
-  import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
-  import { RequestResultViewer } from '@components/requestResult'
-  import { RequestConfig } from '@components/forms'
-  import {
-    Accordion,
-    AccordionItem,
-    AccordionTrigger,
-    AccordionContent
-  } from '@lib/components/ui/accordion'
-  import {
-    Select,
-    SelectTrigger,
-    SelectContent,
-    SelectItem,
-    SelectGroup,
-    SelectValue
-  } from '@lib/components/ui/select'
-  import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
-  import { invoke } from '@tauri-apps/api/core'
-  import { Method } from '@enums/methods'
-  import { Send } from 'lucide-svelte'
-  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
-  import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
-  import { toast } from 'svelte-sonner'
-  import {
-    commands,
-    type Request,
-    type CollectionConfig,
-    type Options,
-    type Environment,
-    type BodyTypes,
-    type BodyTypesEnum
-  } from '../tauriApi'
-  import { debounce } from '@lib/utils'
-  import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
-  import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
-  import Mustache from 'mustache'
-  import { Codemirror } from '@lib/components/codemirror'
-  import { Input } from '@lib/components/ui/input'
-  import { BodyTypeEnum } from '@enums/bodyTypes'
-  import { listen } from '@tauri-apps/api/event'
+import { Label } from '@lib/components/ui/label'
+import { Button } from '@lib/components/ui/button'
+import { ScrollArea } from '@lib/components/ui/scroll-area'
+import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
+import { RequestResultViewer } from '@components/requestResult'
+import { RequestConfig } from '@components/forms'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent
+} from '@lib/components/ui/accordion'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectGroup,
+  SelectValue
+} from '@lib/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
+import { invoke } from '@tauri-apps/api/core'
+import { Method } from '@enums/methods'
+import { Send } from 'lucide-svelte'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
+import { ResizableHandle, ResizablePane, ResizablePaneGroup } from '@lib/components/ui/resizable'
+import { toast } from 'svelte-sonner'
+import {
+  commands,
+  type Request,
+  type CollectionConfig,
+  type Options,
+  type Environment,
+  type BodyTypes,
+  type BodyTypesEnum
+} from '../tauriApi'
+import { debounce } from '@lib/utils'
+import AddEnvironmentDialog from '@components/dialogs/addEnvironmentDialog.svelte'
+import EditEnvironmentDialog from '@components/dialogs/editEnvironmentDialog.svelte'
+import Mustache from 'mustache'
+import { Codemirror } from '@lib/components/codemirror'
+import { Input } from '@lib/components/ui/input'
+import { BodyTypeEnum } from '@enums/bodyTypes'
+import { listen } from '@tauri-apps/api/event'
 
-  let defaultRequest: Request = $state({
-    name: 'New request',
-    url: '',
-    method: Method.GET,
-    id: 'no-id',
-    options: {
-      body: { form_data: [], json: '' },
-      headers: [],
-      params: []
-    },
-    pre_request_script: null,
-    test: null
-  })
+let defaultRequest: Request = $state({
+  name: 'New request',
+  url: '',
+  method: Method.GET,
+  id: 'no-id',
+  options: {
+    body: { form_data: [], json: '' },
+    headers: [],
+    params: []
+  },
+  pre_request_script: null,
+  test: null
+})
 
-  let defaultEnvironment: Environment = $state({
-    name: 'default',
-    id: 'nope',
-    vars: []
-  })
+let defaultEnvironment: Environment = $state({
+  name: 'default',
+  id: 'nope',
+  vars: []
+})
 
-  let collections: CollectionConfig[] = $state([])
-  let selectedRequestId = $state('no-id')
-  let selectedEnvironmentId = $state('nope')
-  let selectedRequest: Request = $derived(selectRequest())
-  let requestCollection: null | CollectionConfig = $derived(getCollection())
-  let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
-  let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
-  let needRedrawOfConfig = $state(false)
+let collections: CollectionConfig[] = $state([])
+let selectedRequestId = $state('no-id')
+let selectedEnvironmentId = $state('nope')
+let selectedRequest: Request = $derived(selectRequest())
+let requestCollection: null | CollectionConfig = $derived(getCollection())
+let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
+let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
+let needRedrawOfConfig = $state(false)
 
-  let selectedEnvironment = $derived(
-    selectedCollectionEnvironment?.name
-      ? {
-          label: selectedCollectionEnvironment.name,
-          value: selectedCollectionEnvironment.id
-        }
-      : undefined
-  )
-  let selectedMethod = $derived(
-    selectedRequest.method
-      ? {
-          label: selectedRequest.method.toUpperCase(),
-          value: selectedRequest.method
-        }
-      : undefined
-  )
-
-  function selectRequest() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
-      if (request) {
-        return request
+let selectedEnvironment = $derived(
+  selectedCollectionEnvironment?.name
+    ? {
+        label: selectedCollectionEnvironment.name,
+        value: selectedCollectionEnvironment.id
       }
-    }
-    return defaultRequest
-  }
-
-  function getCollection() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
-      if (request) {
-        return collection
+    : undefined
+)
+let selectedMethod = $derived(
+  selectedRequest.method
+    ? {
+        label: selectedRequest.method.toUpperCase(),
+        value: selectedRequest.method
       }
+    : undefined
+)
+
+function selectRequest() {
+  for (const collection of collections) {
+    const request = collection.requests.find(({ id }) => id === selectedRequestId)
+    if (request) {
+      return request
     }
-    return null
   }
+  return defaultRequest
+}
 
-  function selectEnvironment() {
-    if (!requestCollection || !requestCollection.environments?.length) {
-      return defaultEnvironment
+function getCollection() {
+  for (const collection of collections) {
+    const request = collection.requests.find(({ id }) => id === selectedRequestId)
+    if (request) {
+      return collection
     }
-    needRedrawOfConfig = true
+  }
+  return null
+}
 
-    const environment = requestCollection.environments.find(
-      ({ id }) => id === selectedEnvironmentId
-    )
-
-    if (environment) {
-      needRedrawOfConfig = false
-      return environment
-    }
-    needRedrawOfConfig = false
-
+function selectEnvironment() {
+  if (!requestCollection || !requestCollection.environments?.length) {
     return defaultEnvironment
   }
+  needRedrawOfConfig = true
 
-  const createNewCollection = async (name: string) => {
-    const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
-    await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
-    collections.push(newCollectionToAdd)
-    toast.success('Collection created')
+  const environment = requestCollection.environments.find(({ id }) => id === selectedEnvironmentId)
+
+  if (environment) {
+    needRedrawOfConfig = false
+    return environment
+  }
+  needRedrawOfConfig = false
+
+  return defaultEnvironment
+}
+
+const createNewCollection = async (name: string) => {
+  const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
+  await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
+  collections.push(newCollectionToAdd)
+  toast.success('Collection created')
+}
+
+const createNewRequest = async (
+  collection: CollectionConfig,
+  name: string,
+  url: string,
+  method: Method
+) => {
+  collection.requests.push({ ...defaultRequest, name, url, method })
+  await invoke('update_collection', { collectionName: collection.name, config: collection })
+  collections = await invoke('get_collections')
+  toast.success('Request created')
+}
+
+const createNewEnvironment = async (name: string) => {
+  if (!requestCollection) {
+    return toast.error('Please select a collection to create a new environment')
   }
 
-  const createNewRequest = async (
-    collection: CollectionConfig,
-    name: string,
-    url: string,
-    method: Method
-  ) => {
-    collection.requests.push({ ...defaultRequest, name, url, method })
-    await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collections = await invoke('get_collections')
-    toast.success('Request created')
+  if (!requestCollection?.environments) {
+    requestCollection.environments = []
   }
+  requestCollection.environments.push({ name, vars: [], id: 'nope' })
 
-  const createNewEnvironment = async (name: string) => {
-    if (!requestCollection) {
-      return toast.error("Merci de selectionner une collecion avant d'y ajouter un environnement")
-    }
+  updateCollection()
+}
 
-    if (!requestCollection?.environments) {
-      requestCollection.environments = []
-    }
-    requestCollection.environments.push({ name, vars: [], id: 'nope' })
+listen('save', () => {
+  updateCollection()
+})
 
-    updateCollection()
-  }
-
-  listen('save', () => {
-    updateCollection()
-  })
-
-  const updateCollection = () => {
-    if (!requestCollection) {
-      return toast.error("Votre requête ne fait partie d'aucune collection", {
-        description: "Merci de créer votre collection avant d'enregistrer votre requête"
-      })
-    }
-    invoke('update_collection', {
-      collectionName: requestCollection.name,
-      config: requestCollection
+const updateCollection = () => {
+  if (!requestCollection) {
+    return toast.error("Votre requête ne fait partie d'aucune collection", {
+      description: "Merci de créer votre collection avant d'enregistrer votre requête"
     })
-      .then(() => {
-        toast.success('Collection mise à jours')
-      })
-      .catch((error) => {
-        toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
-          description: error
-        })
-      })
   }
-
-  const getCollections = async () => {
-    collections = await invoke('get_collections')
-  }
-
-  let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
-  const sendRequest = async () => {
-    const hasEnvVars = selectedCollectionEnvironment?.vars.length
-    let unparsedEnvVars: Record<string, string> = selectedCollectionEnvironment?.vars.reduce(
-      (acc, [key, value]) => ({ ...acc, [key]: value }),
-      {}
-    )
-
-    const envVars = Object.entries(unparsedEnvVars).reduce(
-      (acc, [key, value]) => ({
-        ...acc,
-        [key]: Mustache.render(value, unparsedEnvVars, {}, { escape: (s: string) => s })
-      }),
-      {}
-    )
-
-    if (!selectedRequest.url) {
-      toast.error("Merci d'entrer une url")
-      return
-    }
-
-    const { promise, resolve, reject } = Promise.withResolvers<string>()
-
-    sendRequestPromise = promise
-
-    function getBody(): BodyTypes {
-      return {
-        json: Mustache.render(
-          selectedRequest.options.body.json,
-          envVars,
-          {},
-          { escape: (s: string) => s }
-        ),
-        form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                {
-                  is_active,
-                  value:
-                    hasEnvVars && typeof value === 'string'
-                      ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                      : value
-                }
-              ]
-            ]
-          },
-          []
-        )
-      }
-    }
-
-    const result = await commands.makeApiCall(
-      selectedRequest.method,
-      hasEnvVars
-        ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
-        : selectedRequest.url,
-      {
-        ...selectedRequest.options,
-        body: getBody(),
-        headers: selectedRequest.options.headers.reduce<[string, string][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                hasEnvVars && typeof value === 'string'
-                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                  : `${value}`
-              ]
-            ]
-          },
-          []
-        )
-      },
-      bodyType
-    )
-
-    if (result.status === 'error') {
-      toast.error('Une erreur est survenue', { description: result.error })
-      return reject(result.error)
-    }
-
-    resolve(result.data)
-  }
-
-  const saveParams = debounce((params: [string, Options][]) => {
-    selectedRequest.options.params = params
-  }, 600)
-
-  const setParamsInUrl = debounce((url: string) => {
-    const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
-    selectedRequest.url = `${url}${
-      hasOptions
-        ? `?${selectedRequest.options.params
-            .reduce<string[]>((params, [key, { value, is_active }]) => {
-              if (!is_active) {
-                return params
-              }
-
-              return [...params, `${key}=${value}`]
-            }, [])
-            .join('&')}`
-        : ''
-    }`
-  }, 600)
-
-  $effect(() => {
-    const [url, requestParams] = selectedRequest.url.split('?')
-
-    if (!url) {
-      return
-    }
-
-    if (requestParams) {
-      const params = requestParams
-        .split('&')
-        .map<[string, string]>((param) => param.split('=') as [string, string])
-      saveParams(params.map(([key, value]) => [key, { is_active: true, value }]))
-    }
-
-    setParamsInUrl(url)
+  invoke('update_collection', {
+    collectionName: requestCollection.name,
+    config: requestCollection
   })
+    .then(() => {
+      toast.success('Collection mise à jours')
+    })
+    .catch((error) => {
+      toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
+        description: error
+      })
+    })
+}
 
-  const setParamsToUrl = () => {
-    const [url] = selectedRequest.url.split('?')
-    if (selectedRequest.options.params.length) {
-      setParamsInUrl(url)
+const getCollections = async () => {
+  collections = await invoke('get_collections')
+}
+
+let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
+const sendRequest = async () => {
+  const hasEnvVars = selectedCollectionEnvironment?.vars.length
+  let unparsedEnvVars: Record<string, string> = selectedCollectionEnvironment?.vars.reduce(
+    (acc, [key, value]) => ({ ...acc, [key]: value }),
+    {}
+  )
+
+  const envVars = Object.entries(unparsedEnvVars).reduce(
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: Mustache.render(value, unparsedEnvVars, {}, { escape: (s: string) => s })
+    }),
+    {}
+  )
+
+  if (!selectedRequest.url) {
+    toast.error('Please write an url')
+    return
+  }
+
+  const { promise, resolve, reject } = Promise.withResolvers<string>()
+
+  sendRequestPromise = promise
+
+  function getBody(): BodyTypes {
+    return {
+      json: Mustache.render(
+        selectedRequest.options.body.json,
+        envVars,
+        {},
+        { escape: (s: string) => s }
+      ),
+      form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
+            return acc
+          }
+          return [
+            ...acc,
+            [
+              hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+              {
+                is_active,
+                value:
+                  hasEnvVars && typeof value === 'string'
+                    ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                    : value
+              }
+            ]
+          ]
+        },
+        []
+      )
     }
   }
 
-  function addNewHeader() {
-    selectedRequest.options.headers.push(['', { is_active: true, value: '' }])
+  const result = await commands.makeApiCall(
+    selectedRequest.method,
+    hasEnvVars
+      ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
+      : selectedRequest.url,
+    {
+      ...selectedRequest.options,
+      body: getBody(),
+      headers: selectedRequest.options.headers.reduce<[string, string][]>(
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
+            return acc
+          }
+          return [
+            ...acc,
+            [
+              hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+              hasEnvVars && typeof value === 'string'
+                ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                : `${value}`
+            ]
+          ]
+        },
+        []
+      )
+    },
+    bodyType
+  )
+
+  if (result.status === 'error') {
+    toast.error('An error occured', { description: result.error })
+    return reject(result.error)
   }
 
-  function addNewBodyField() {
-    selectedRequest.options.body.form_data.push(['', { is_active: true, value: '' }])
+  resolve(result.data)
+}
+
+const saveParams = debounce((params: [string, Options][]) => {
+  selectedRequest.options.params = params
+}, 600)
+
+const setParamsInUrl = debounce((url: string) => {
+  const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
+  selectedRequest.url = `${url}${
+    hasOptions
+      ? `?${selectedRequest.options.params
+          .reduce<string[]>((params, [key, { value, is_active }]) => {
+            if (!is_active) {
+              return params
+            }
+
+            return [...params, `${key}=${value}`]
+          }, [])
+          .join('&')}`
+      : ''
+  }`
+}, 600)
+
+$effect(() => {
+  const [url, requestParams] = selectedRequest.url.split('?')
+
+  if (!url) {
+    return
   }
 
-  function addNewParamField() {
-    selectedRequest.options.params = [
-      ...selectedRequest.options.params,
-      ['', { is_active: true, value: '' }]
-    ]
+  if (requestParams) {
+    const params = requestParams
+      .split('&')
+      .map<[string, string]>((param) => param.split('=') as [string, string])
+    saveParams(params.map(([key, value]) => [key, { is_active: true, value }]))
   }
 
-  function deleteBody(i: number) {
-    selectedRequest.options.body.form_data.splice(i, 1)
-  }
+  setParamsInUrl(url)
+})
 
-  function deleteHeader(i: number) {
-    selectedRequest.options.headers.splice(i, 1)
+const setParamsToUrl = () => {
+  const [url] = selectedRequest.url.split('?')
+  if (selectedRequest.options.params.length) {
+    setParamsInUrl(url)
   }
-  function deleteParam(i: number) {
-    selectedRequest.options.params.splice(i, 1)
-  }
+}
+
+function addNewHeader() {
+  selectedRequest.options.headers.push(['', { is_active: true, value: '' }])
+}
+
+function addNewBodyField() {
+  selectedRequest.options.body.form_data.push(['', { is_active: true, value: '' }])
+}
+
+function addNewParamField() {
+  selectedRequest.options.params = [
+    ...selectedRequest.options.params,
+    ['', { is_active: true, value: '' }]
+  ]
+}
+
+function deleteBody(i: number) {
+  selectedRequest.options.body.form_data.splice(i, 1)
+}
+
+function deleteHeader(i: number) {
+  selectedRequest.options.headers.splice(i, 1)
+}
+function deleteParam(i: number) {
+  selectedRequest.options.params.splice(i, 1)
+}
 </script>
 
 {#snippet configView()}
@@ -360,15 +358,15 @@
     <!-- content here -->
     <RequestConfig
       variables={selectedCollectionEnvironment.vars}
-      bind:bodyType
+      bind:bodyType={bodyType}
       bind:requestOptions={selectedRequest.options}
-      {addNewHeader}
-      {addNewBodyField}
-      {addNewParamField}
-      {deleteBody}
-      {deleteHeader}
-      {deleteParam}
-      {setParamsToUrl}
+      addNewHeader={addNewHeader}
+      addNewBodyField={addNewBodyField}
+      addNewParamField={addNewParamField}
+      deleteBody={deleteBody}
+      deleteHeader={deleteHeader}
+      deleteParam={deleteParam}
+      setParamsToUrl={setParamsToUrl}
     />
   {/if}
 {/snippet}
@@ -379,7 +377,7 @@
     sending unicorns...
   {:then result}
     <!-- promise was fulfilled -->
-    <RequestResultViewer {result} />
+    <RequestResultViewer result={result} />
   {:catch error}
     <!-- promise was rejected -->
     {error}
@@ -396,7 +394,7 @@
       }}
     >
       <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Sélectionnez l'environnement" />
+        <SelectValue placeholder="Select environnement" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -473,12 +471,12 @@
       }}
     >
       <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Sélectionnez la méthode" />
+        <SelectValue placeholder="Select method" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
           {#each Object.entries(Method) as [key, value]}
-            <SelectItem {value} label={key}>{key}</SelectItem>
+            <SelectItem value={value} label={key}>{key}</SelectItem>
           {/each}
         </SelectGroup>
       </SelectContent>
@@ -519,9 +517,9 @@
 </div>
 
 <style>
-  #main {
-    display: flex;
-    flex-direction: column;
-    @apply w-full overflow-hidden p-4;
-  }
+#main {
+  display: flex;
+  flex-direction: column;
+  @apply w-full overflow-hidden p-4;
+}
 </style>
