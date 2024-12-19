@@ -80,6 +80,7 @@
         }
       : undefined
   )
+
   let selectedMethod = $derived(
     selectedRequest.method
       ? {
@@ -242,48 +243,48 @@
       return
     }
 
-    const { promise, resolve, reject } = Promise.withResolvers<string>()
-
-    sendRequestPromise = promise
-
-    const result = await commands.makeApiCall(
-      selectedRequest.method,
-      hasEnvVars
-        ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
-        : selectedRequest.url,
-      {
-        ...selectedRequest.options,
-        body: getBody(hasEnvVars, envVars),
-        headers: selectedRequest.options.headers.reduce<[string, string][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                hasEnvVars && typeof value === 'string'
-                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                  : `${value}`
+    sendRequestPromise = new Promise(async (resolve, reject) => {
+      const result = await commands.makeApiCall(
+        selectedRequest.method,
+        hasEnvVars
+          ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
+          : selectedRequest.url,
+        {
+          ...selectedRequest.options,
+          body: getBody(hasEnvVars, envVars),
+          headers: selectedRequest.options.headers.reduce<[string, string][]>(
+            (acc, [key, { is_active, value }]) => {
+              if (!key || !is_active) {
+                return acc
+              }
+              return [
+                ...acc,
+                [
+                  hasEnvVars
+                    ? Mustache.render(key, envVars, {}, { escape: (s: string) => s })
+                    : key,
+                  hasEnvVars && typeof value === 'string'
+                    ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                    : `${value}`
+                ]
               ]
-            ]
-          },
-          []
-        )
-      },
-      bodyType
-    )
+            },
+            []
+          )
+        },
+        bodyType
+      )
 
-    if (result.status === 'error') {
-      toast.error('An error occured', { description: result.error })
-      reject(result.error)
-      sendRequestPromise = null
-      return
-    }
+      if (result.status === 'error') {
+        //toast.error('An error occured', { description: result.error })
+        reject(result.error)
+        return
+      }
 
-    resolve(result.data)
-    sendRequestPromise = null
+      resolve(result.data)
+    })
+
+    sendRequestPromise.finally(() => (sendRequestPromise = null))
   }
 
   const saveParams = debounce((params: [string, Options][]) => {
@@ -426,11 +427,13 @@
 
 {#await getCollections() then _}
   <aside class="h-full max-w-md border-r p-4">
-    <AddCollectionDialog onSend={createNewCollection} />
+    <span class="mb-2">
+      <AddCollectionDialog onSend={createNewCollection} />
+    </span>
     {#if collections.length}
       <!-- content here -->
       <ScrollArea class="collection-list rounded-md border p-4">
-        <Accordion type="single">
+        <Accordion type="multiple">
           {#each collections as collection}
             <AccordionItem value={collection.name}>
               <AccordionTrigger>{collection.name}</AccordionTrigger>
@@ -480,9 +483,13 @@
       variables={selectedCollectionEnvironment.vars}
       bind:value={selectedRequest.url}
     />
-    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={sendRequestPromise !== null}
-      >Send <Send /></Button
-    >
+    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={sendRequestPromise !== null}>
+      {#if sendRequestPromise !== null}
+        <span class="loading loading-spinner loading-lg"></span>
+      {:else}
+        Send <Send />
+      {/if}
+    </Button>
   </div>
 
   <Tabs class="h-dvh w-full">

@@ -10,7 +10,7 @@
     DialogTrigger
   } from '@lib/components/ui/dialog'
 
-  import { Button } from '@lib/components/ui/button'
+  import { Button, buttonVariants } from '@lib/components/ui/button'
   import { Input } from '@lib/components/ui/input'
   import { Pencil, Plus, Trash } from 'lucide-svelte'
 
@@ -40,10 +40,13 @@
 </script>
 
 <Dialog>
-  <DialogTrigger>
-    <Button disabled={!environmentName} title={`Edit ${environmentName}`} class="gap-2">
-      <Pencil />
-    </Button>
+  <DialogTrigger
+    disabled={!environmentName}
+    title={`Edit ${environmentName}`}
+    class={`${buttonVariants()} gap-2`}
+  >
+    Edit {environmentName}
+    <Pencil />
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>

@@ -3,6 +3,8 @@
   import { ModeWatcher, toggleMode, mode } from 'mode-watcher'
   import { Toaster } from '$lib/components/ui/sonner'
   import { listen } from '@tauri-apps/api/event'
+  import * as Sidebar from '$lib/components/ui/sidebar/index.js'
+  import AppSidebar from '@components/app-sidebar.svelte'
 
   let { children } = $props()
   listen('toggle-theme', () => {
@@ -12,6 +14,13 @@
 
 <ModeWatcher />
 <Toaster />
+<Sidebar.Provider>
+  <AppSidebar />
+  <main>
+    <Sidebar.Trigger />
+    {@render children?.()}
+  </main>
+</Sidebar.Provider>
 
 <div id="main-view">
   <nav></nav>

@@ -16,7 +16,7 @@
     SelectItem,
     SelectGroup
   } from '@lib/components/ui/select'
-  import { Button } from '@lib/components/ui/button'
+  import { Button, buttonVariants } from '@lib/components/ui/button'
   import { Label } from '@lib/components/ui/label'
   import { Input } from '@lib/components/ui/input'
   import { Plus } from 'lucide-svelte'
@@ -41,8 +41,8 @@
 </script>
 
 <Dialog>
-  <DialogTrigger>
-    <Button title="Create a request" class="gap-2">Create a request<Plus /></Button>
+  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a request">
+    Create a request<Plus />
   </DialogTrigger>
   <DialogContent>
     <DialogHeader>
