@@ -14,8 +14,7 @@
     SelectTrigger,
     SelectContent,
     SelectItem,
-    SelectGroup,
-    SelectValue
+    SelectGroup
   } from '@lib/components/ui/select'
   import { Button } from '@lib/components/ui/button'
   import { Label } from '@lib/components/ui/label'
@@ -41,7 +40,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
+<Dialog>
   <DialogTrigger>
     <Button title="Create a request" class="gap-2">Create a request<Plus /></Button>
   </DialogTrigger>
@@ -66,14 +65,9 @@
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
         <Label for="method" class="text-right">Request method</Label>
-        <Select
-          selected={selectedMethod}
-          onSelectedChange={(event) => {
-            event && (method = event.value)
-          }}
-        >
+        <Select type="single" bind:value={method}>
           <SelectTrigger class="col-span-3">
-            <SelectValue placeholder="Select method" />
+            {selectedMethod?.label ?? 'Select method'}
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

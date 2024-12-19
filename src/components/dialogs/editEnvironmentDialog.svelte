@@ -39,7 +39,7 @@
   }
 </script>
 
-<Dialog closeOnOutsideClick>
+<Dialog>
   <DialogTrigger>
     <Button disabled={!environmentName} title={`Edit ${environmentName}`} class="gap-2">
       <Pencil />

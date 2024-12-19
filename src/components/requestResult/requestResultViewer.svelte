@@ -2,7 +2,11 @@
   import { Tabs, TabsList, TabsContent, TabsTrigger } from '@lib/components/ui/tabs'
   import { Codemirror } from '@lib/components/codemirror'
 
-  export let result: string
+  type Props = {
+    result: string
+  }
+
+  let { result }: Props = $props()
 </script>
 
 <Tabs class="h-dvh w-full">

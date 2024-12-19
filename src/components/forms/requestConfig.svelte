@@ -10,8 +10,7 @@
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectTrigger,
-    SelectValue
+    SelectTrigger
   } from '@lib/components/ui/select'
   import { json } from '@codemirror/lang-json'
   import { BodyTypeEnum } from '@enums/bodyTypes'
@@ -55,14 +54,9 @@
 </script>
 
 {#snippet bodyTypeSelector()}
-  <Select
-    selected={selectedBodyType}
-    onSelectedChange={(v) => {
-      v && (bodyType = v.value)
-    }}
-  >
+  <Select type="single" bind:value={bodyType}>
     <SelectTrigger class="col-span-1">
-      <SelectValue placeholder="Select environment" />
+      {selectedBodyType?.label ?? 'Select environment'}
     </SelectTrigger>
     <SelectContent>
       <SelectGroup>
@@ -111,7 +105,7 @@
   <TabsContent value="params">
     {#each requestOptions.params as param, i}
       <div class="flex items-center justify-center gap-3">
-        <Checkbox on:click={setParamsToUrl} bind:checked={param[1].is_active} />
+        <Checkbox onclick={setParamsToUrl} bind:checked={param[1].is_active} />
         <Codemirror
           variables={localVariables}
           onkeyup={setParamsToUrl}

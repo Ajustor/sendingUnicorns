@@ -21,7 +21,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
+<Dialog>
   <DialogTrigger>
     <Button title="Create a collection" class="gap-2">Create a collection<Plus /></Button>
   </DialogTrigger>

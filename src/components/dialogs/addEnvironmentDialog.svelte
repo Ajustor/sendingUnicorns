@@ -22,7 +22,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
+<Dialog>
   <DialogTrigger>
     <Button title="Create an environment" class="gap-2">Create an environment<Plus /></Button>
   </DialogTrigger>

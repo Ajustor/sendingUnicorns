@@ -16,8 +16,7 @@
     SelectTrigger,
     SelectContent,
     SelectItem,
-    SelectGroup,
-    SelectValue
+    SelectGroup
   } from '@lib/components/ui/select'
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
@@ -189,9 +188,42 @@
     collections = await invoke('get_collections')
   }
 
-  let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
+  let sendRequestPromise: Promise<string> | null = $state(null)
+
+  function getBody(hasEnvVars: boolean, envVars: Record<string, string>): BodyTypes {
+    return {
+      json: Mustache.render(
+        selectedRequest.options.body.json,
+        envVars,
+        {},
+        { escape: (s: string) => s }
+      ),
+      form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
+            return acc
+          }
+          return [
+            ...acc,
+            [
+              hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+              {
+                is_active,
+                value:
+                  hasEnvVars && typeof value === 'string'
+                    ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                    : value
+              }
+            ]
+          ]
+        },
+        []
+      )
+    }
+  }
+
   const sendRequest = async () => {
-    const hasEnvVars = selectedCollectionEnvironment?.vars.length
+    const hasEnvVars = !!selectedCollectionEnvironment?.vars.length
     let unparsedEnvVars: Record<string, string> = selectedCollectionEnvironment?.vars.reduce(
       (acc, [key, value]) => ({ ...acc, [key]: value }),
       {}
@@ -214,38 +246,6 @@
 
     sendRequestPromise = promise
 
-    function getBody(): BodyTypes {
-      return {
-        json: Mustache.render(
-          selectedRequest.options.body.json,
-          envVars,
-          {},
-          { escape: (s: string) => s }
-        ),
-        form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                {
-                  is_active,
-                  value:
-                    hasEnvVars && typeof value === 'string'
-                      ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                      : value
-                }
-              ]
-            ]
-          },
-          []
-        )
-      }
-    }
-
     const result = await commands.makeApiCall(
       selectedRequest.method,
       hasEnvVars
@@ -253,7 +253,7 @@
         : selectedRequest.url,
       {
         ...selectedRequest.options,
-        body: getBody(),
+        body: getBody(hasEnvVars, envVars),
         headers: selectedRequest.options.headers.reduce<[string, string][]>(
           (acc, [key, { is_active, value }]) => {
             if (!key || !is_active) {
@@ -277,10 +277,13 @@
 
     if (result.status === 'error') {
       toast.error('An error occured', { description: result.error })
-      return reject(result.error)
+      reject(result.error)
+      sendRequestPromise = null
+      return
     }
 
     resolve(result.data)
+    sendRequestPromise = null
   }
 
   const saveParams = debounce((params: [string, Options][]) => {
@@ -375,28 +378,21 @@
 
 {#snippet resultView()}
   {#await sendRequestPromise}
-    <!-- promise is pending -->
     sending unicorns...
   {:then result}
-    <!-- promise was fulfilled -->
-    <RequestResultViewer {result} />
+    {#if result !== null}
+      <RequestResultViewer {result} />
+    {/if}
   {:catch error}
-    <!-- promise was rejected -->
     {error}
   {/await}
 {/snippet}
 
 {#snippet environmentSelect()}
   <span class="flex min-w-64 max-w-[50%] gap-2">
-    <Select
-      disabled={!requestCollection}
-      selected={selectedEnvironment}
-      onSelectedChange={(v) => {
-        v && (selectedEnvironmentId = v.value)
-      }}
-    >
+    <Select disabled={!requestCollection} type="single" bind:value={selectedEnvironmentId}>
       <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Select environnement" />
+        {selectedEnvironment?.label ?? 'Select your environment'}
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -434,7 +430,7 @@
     {#if collections.length}
       <!-- content here -->
       <ScrollArea class="collection-list rounded-md border p-4">
-        <Accordion>
+        <Accordion type="single">
           {#each collections as collection}
             <AccordionItem value={collection.name}>
               <AccordionTrigger>{collection.name}</AccordionTrigger>
@@ -466,14 +462,9 @@
     {@render environmentSelect()}
   </div>
   <div class="grid grid-cols-5 gap-2 p-2">
-    <Select
-      selected={selectedMethod}
-      onSelectedChange={(v) => {
-        v && (selectedRequest.method = v.value)
-      }}
-    >
+    <Select type="single" bind:value={selectedRequest.method}>
       <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Select method" />
+        {selectedMethod?.label ?? 'Select your method'}
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -489,7 +480,9 @@
       variables={selectedCollectionEnvironment.vars}
       bind:value={selectedRequest.url}
     />
-    <Button class="col-span-1 gap-2" onclick={sendRequest}>Send <Send /></Button>
+    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={sendRequestPromise !== null}
+      >Send <Send /></Button
+    >
   </div>
 
   <Tabs class="h-dvh w-full">
