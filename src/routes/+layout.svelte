@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css'
-  import { ModeWatcher, toggleMode, mode } from 'mode-watcher'
+  import { ModeWatcher, toggleMode } from 'mode-watcher'
   import { Toaster } from '$lib/components/ui/sonner'
   import { listen } from '@tauri-apps/api/event'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
