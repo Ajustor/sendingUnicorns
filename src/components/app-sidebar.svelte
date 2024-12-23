@@ -13,8 +13,9 @@
   import { Method } from '@enums/methods'
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { Label } from '@lib/components/ui/label'
+  import { useCollections } from '../stores/collections.svelte'
 
-  let collections: CollectionConfig[] = $state([])
+  const collectionsStore = useCollections([])
 
   let defaultRequest: Request = $state({
     name: 'New request',
@@ -33,7 +34,7 @@
   const createNewCollection = async (name: string) => {
     const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
-    collections.push(newCollectionToAdd)
+    collectionsStore.value?.push(newCollectionToAdd)
     toast.success('Collection created')
   }
 
@@ -45,9 +46,10 @@
   ) => {
     collection.requests.push({ ...defaultRequest, name, url, method })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collections = await invoke('get_collections')
+    collectionsStore.value = await invoke('get_collections')
     toast.success('Request created')
   }
+  let selectedRequestId = $state('no-id')
 </script>
 
 <Sidebar.Root>
@@ -55,10 +57,10 @@
     <AddCollectionDialog onSend={createNewCollection} />
   </Sidebar.Header>
   <Sidebar.Content>
-    {#if collections.length}
+    {#if collectionsStore.value?.length}
       <Sidebar.Group>
         <Accordion type="multiple">
-          {#each collections as collection}
+          {#each collectionsStore.value as collection}
             <AccordionItem value={collection.name}>
               <AccordionTrigger>{collection.name}</AccordionTrigger>
               <AccordionContent>
