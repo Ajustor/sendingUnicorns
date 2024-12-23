@@ -13,9 +13,8 @@
   import { Method } from '@enums/methods'
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { Label } from '@lib/components/ui/label'
-  import { useCollections } from '../stores/collections.svelte'
-
-  const collectionsStore = useCollections([])
+  import { collectionsStore } from '../stores/collections.svelte'
+  import { requestStore } from '../stores/request.svelte'
 
   let defaultRequest: Request = $state({
     name: 'New request',
@@ -34,7 +33,7 @@
   const createNewCollection = async (name: string) => {
     const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
     await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
-    collectionsStore.value?.push(newCollectionToAdd)
+    collectionsStore.collections.push(newCollectionToAdd)
     toast.success('Collection created')
   }
 
@@ -46,10 +45,29 @@
   ) => {
     collection.requests.push({ ...defaultRequest, name, url, method })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collectionsStore.value = await invoke('get_collections')
+    collectionsStore.collections = await invoke('get_collections')
     toast.success('Request created')
   }
   let selectedRequestId = $state('no-id')
+
+  $effect(() => {
+    invoke<CollectionConfig[]>('get_collections').then((collections) => {
+      collectionsStore.collections = collections
+    })
+  })
+
+  $effect(selectRequest)
+
+  function selectRequest() {
+    for (const collection of collectionsStore.collections) {
+      const request = collection.requests.find(({ id }) => id === selectedRequestId)
+      if (request) {
+        requestStore.request = request
+        return
+      }
+    }
+    requestStore.request = defaultRequest
+  }
 </script>
 
 <Sidebar.Root>
@@ -57,10 +75,10 @@
     <AddCollectionDialog onSend={createNewCollection} />
   </Sidebar.Header>
   <Sidebar.Content>
-    {#if collectionsStore.value?.length}
+    {#if collectionsStore.collections?.length}
       <Sidebar.Group>
         <Accordion type="multiple">
-          {#each collectionsStore.value as collection}
+          {#each collectionsStore.collections as collection}
             <AccordionItem value={collection.name}>
               <AccordionTrigger>{collection.name}</AccordionTrigger>
               <AccordionContent>

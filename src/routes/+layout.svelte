@@ -16,18 +16,20 @@
 <Toaster />
 <Sidebar.Provider>
   <AppSidebar />
-  <main>
-    <Sidebar.Trigger />
-    {@render children?.()}
-  </main>
+  <div id="main-view">
+    <nav></nav>
+    <div class="flex">
+      {@render children()}
+    </div>
+  </div>
 </Sidebar.Provider>
 
-<div id="main-view">
+<!-- <div id="main-view">
   <nav></nav>
   <div class="flex">
     {@render children()}
   </div>
-</div>
+</div> -->
 
 <style>
   nav {
@@ -36,7 +38,7 @@
     @apply p-2;
   }
   #main-view {
-    @apply h-full max-h-dvh overflow-hidden;
+    @apply h-full max-h-dvh w-full overflow-hidden;
     display: flex;
     flex-direction: column;
   }

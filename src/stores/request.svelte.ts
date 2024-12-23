@@ -1,8 +1,7 @@
 import { Method } from '@enums/methods'
 import type { Request } from '../tauriApi'
-import { useRune } from './sharedStore'
 
-const defaultRequest: Request = $state({
+let request: Request = $state({
   name: 'New request',
   url: '',
   method: Method.GET,
@@ -16,4 +15,11 @@ const defaultRequest: Request = $state({
   test: null
 })
 
-export const useRequest = () => useRune('request', defaultRequest)
+export const requestStore = {
+  get request() {
+    return request
+  },
+  set request(value: Request) {
+    request = value
+  }
+}

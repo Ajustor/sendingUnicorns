@@ -42,20 +42,8 @@
   import { Input } from '@lib/components/ui/input'
   import { BodyTypeEnum } from '@enums/bodyTypes'
   import { listen } from '@tauri-apps/api/event'
-
-  let defaultRequest: Request = $state({
-    name: 'New request',
-    url: '',
-    method: Method.GET,
-    id: 'no-id',
-    options: {
-      body: { form_data: [], json: '' },
-      headers: [],
-      params: []
-    },
-    pre_request_script: null,
-    test: null
-  })
+  import { collectionsStore } from '../stores/collections.svelte'
+  import { requestStore } from '../stores/request.svelte'
 
   let defaultEnvironment: Environment = $state({
     name: 'default',
@@ -63,10 +51,7 @@
     vars: []
   })
 
-  let collections: CollectionConfig[] = $state([])
-  let selectedRequestId = $state('no-id')
   let selectedEnvironmentId = $state('nope')
-  let selectedRequest: Request = $derived(selectRequest())
   let requestCollection: null | CollectionConfig = $derived(getCollection())
   let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
   let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
@@ -82,27 +67,17 @@
   )
 
   let selectedMethod = $derived(
-    selectedRequest.method
+    requestStore.request.method
       ? {
-          label: selectedRequest.method.toUpperCase(),
-          value: selectedRequest.method
+          label: requestStore.request.method.toUpperCase(),
+          value: requestStore.request.method
         }
       : undefined
   )
 
-  function selectRequest() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
-      if (request) {
-        return request
-      }
-    }
-    return defaultRequest
-  }
-
   function getCollection() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
+    for (const collection of collectionsStore.collections) {
+      const request = collection.requests.find(({ id }) => id === requestStore.request.id)
       if (request) {
         return collection
       }
@@ -127,25 +102,6 @@
     needRedrawOfConfig = false
 
     return defaultEnvironment
-  }
-
-  const createNewCollection = async (name: string) => {
-    const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
-    await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
-    collections.push(newCollectionToAdd)
-    toast.success('Collection created')
-  }
-
-  const createNewRequest = async (
-    collection: CollectionConfig,
-    name: string,
-    url: string,
-    method: Method
-  ) => {
-    collection.requests.push({ ...defaultRequest, name, url, method })
-    await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collections = await invoke('get_collections')
-    toast.success('Request created')
   }
 
   const createNewEnvironment = async (name: string) => {
@@ -185,21 +141,21 @@
       })
   }
 
-  const getCollections = async () => {
-    collections = await invoke('get_collections')
-  }
-
   let sendRequestPromise: Promise<string> | null = $state(null)
 
   function getBody(hasEnvVars: boolean, envVars: Record<string, string>): BodyTypes {
+    if (!requestStore.request) {
+      throw toast.error('An error occured while try to retrieve body')
+    }
+
     return {
       json: Mustache.render(
-        selectedRequest.options.body.json,
+        requestStore.request.options.body.json,
         envVars,
         {},
         { escape: (s: string) => s }
       ),
-      form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
+      form_data: requestStore.request.options.body.form_data.reduce<[string, Options][]>(
         (acc, [key, { is_active, value }]) => {
           if (!key || !is_active) {
             return acc
@@ -237,22 +193,28 @@
       }),
       {}
     )
+    const request = requestStore.request
 
-    if (!selectedRequest.url) {
+    if (!request) {
+      toast.error('An error occured with the request')
+      return
+    }
+
+    if (!request?.url) {
       toast.error('Please write an url')
       return
     }
 
     sendRequestPromise = new Promise(async (resolve, reject) => {
       const result = await commands.makeApiCall(
-        selectedRequest.method,
+        request.method,
         hasEnvVars
-          ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
-          : selectedRequest.url,
+          ? Mustache.render(request.url, envVars, {}, { escape: (s: string) => s })
+          : request.url,
         {
-          ...selectedRequest.options,
+          ...request.options,
           body: getBody(hasEnvVars, envVars),
-          headers: selectedRequest.options.headers.reduce<[string, string][]>(
+          headers: request.options.headers.reduce<[string, string][]>(
             (acc, [key, { is_active, value }]) => {
               if (!key || !is_active) {
                 return acc
@@ -288,14 +250,20 @@
   }
 
   const saveParams = debounce((params: [string, Options][]) => {
-    selectedRequest.options.params = params
+    if (!requestStore.request) {
+      return
+    }
+    requestStore.request.options.params = params
   }, 600)
 
   const setParamsInUrl = debounce((url: string) => {
-    const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
-    selectedRequest.url = `${url}${
+    if (!requestStore.request) {
+      return
+    }
+    const hasOptions = requestStore.request.options.params.some(([, { is_active }]) => is_active)
+    requestStore.request.url = `${url}${
       hasOptions
-        ? `?${selectedRequest.options.params
+        ? `?${requestStore.request.options.params
             .reduce<string[]>((params, [key, { value, is_active }]) => {
               if (!is_active) {
                 return params
@@ -309,7 +277,11 @@
   }, 600)
 
   $effect(() => {
-    const [url, requestParams] = selectedRequest.url.split('?')
+    if (!requestStore.request) {
+      return
+    }
+
+    const [url, requestParams] = requestStore.request.url.split('?')
 
     if (!url) {
       return
@@ -326,36 +298,43 @@
   })
 
   const setParamsToUrl = () => {
-    const [url] = selectedRequest.url.split('?')
-    if (selectedRequest.options.params.length) {
+    if (!requestStore.request) {
+      return
+    }
+
+    const [url] = requestStore.request.url.split('?')
+    if (requestStore.request.options.params.length) {
       setParamsInUrl(url)
     }
   }
 
   function addNewHeader() {
-    selectedRequest.options.headers.push(['', { is_active: true, value: '' }])
+    requestStore.request.options.headers.push(['', { is_active: true, value: '' }])
   }
 
   function addNewBodyField() {
-    selectedRequest.options.body.form_data.push(['', { is_active: true, value: '' }])
+    requestStore.request.options.body.form_data.push(['', { is_active: true, value: '' }])
   }
 
   function addNewParamField() {
-    selectedRequest.options.params = [
-      ...selectedRequest.options.params,
+    if (!requestStore.request) {
+      return
+    }
+    requestStore.request.options.params = [
+      ...requestStore.request.options.params,
       ['', { is_active: true, value: '' }]
     ]
   }
 
   function deleteBody(i: number) {
-    selectedRequest.options.body.form_data.splice(i, 1)
+    requestStore.request.options.body.form_data.splice(i, 1)
   }
 
   function deleteHeader(i: number) {
-    selectedRequest.options.headers.splice(i, 1)
+    requestStore.request.options.headers.splice(i, 1)
   }
   function deleteParam(i: number) {
-    selectedRequest.options.params.splice(i, 1)
+    requestStore.request.options.params.splice(i, 1)
   }
 </script>
 
@@ -365,7 +344,6 @@
     <RequestConfig
       variables={selectedCollectionEnvironment.vars}
       bind:bodyType
-      bind:requestOptions={selectedRequest.options}
       {addNewHeader}
       {addNewBodyField}
       {addNewParamField}
@@ -425,64 +403,35 @@
   </span>
 {/snippet}
 
-{#await getCollections() then _}
-  <aside class="h-full max-w-md border-r p-4">
-    <span class="mb-2">
-      <AddCollectionDialog onSend={createNewCollection} />
-    </span>
-    {#if collections.length}
-      <!-- content here -->
-      <ScrollArea class="collection-list rounded-md border p-4">
-        <Accordion type="multiple">
-          {#each collections as collection}
-            <AccordionItem value={collection.name}>
-              <AccordionTrigger>{collection.name}</AccordionTrigger>
-              <AccordionContent>
-                <AddRequestDialog
-                  onSend={(name: string, url: string, method: Method) =>
-                    createNewRequest(collection, name, url, method)}
-                />
-                <RadioGroup class="p-4" bind:value={selectedRequestId}>
-                  {#each collection.requests as request}
-                    <div class="flex items-center space-x-2">
-                      <RadioGroupItem value={request.id} id={request.name} />
-                      <Label for={request.name}>{request.name}</Label>
-                    </div>
-                  {/each}
-                </RadioGroup>
-              </AccordionContent>
-            </AccordionItem>
-          {/each}
-        </Accordion>
-      </ScrollArea>
-    {/if}
-  </aside>
-{/await}
-
 <div id="main">
   <div class="flex justify-between">
-    <Input bind:value={selectedRequest.name} class="border-0" />
+    {#if requestStore.request}
+      <Input bind:value={requestStore.request.name} class="border-0" />
+    {/if}
     {@render environmentSelect()}
   </div>
   <div class="grid grid-cols-5 gap-2 p-2">
-    <Select type="single" bind:value={selectedRequest.method}>
-      <SelectTrigger class="col-span-1">
-        {selectedMethod?.label ?? 'Select your method'}
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {#each Object.entries(Method) as [key, value]}
-            <SelectItem {value} label={key}>{key}</SelectItem>
-          {/each}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-    <Codemirror
-      class="col-span-3"
-      placeholder="url"
-      variables={selectedCollectionEnvironment.vars}
-      bind:value={selectedRequest.url}
-    />
+    {#if requestStore.request}
+      <!-- content here -->
+      <Select type="single" bind:value={requestStore.request.method}>
+        <SelectTrigger class="col-span-1">
+          {selectedMethod?.label ?? 'Select your method'}
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {#each Object.entries(Method) as [key, value]}
+              <SelectItem {value} label={key}>{key}</SelectItem>
+            {/each}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Codemirror
+        class="col-span-3"
+        placeholder="url"
+        variables={selectedCollectionEnvironment.vars}
+        bind:value={requestStore.request.url}
+      />
+    {/if}
     <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={sendRequestPromise !== null}>
       {#if sendRequestPromise !== null}
         <span class="loading loading-spinner loading-lg"></span>

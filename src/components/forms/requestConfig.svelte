@@ -14,11 +14,11 @@
   } from '@lib/components/ui/select'
   import { json } from '@codemirror/lang-json'
   import { BodyTypeEnum } from '@enums/bodyTypes'
+  import { requestStore } from '../../stores/request.svelte'
 
   type Props = {
     variables: [string, string][]
     bodyType: BodyTypesEnum
-    requestOptions: RequestOptions
     addNewHeader: () => void
     addNewBodyField: () => void
     addNewParamField: () => void
@@ -31,7 +31,6 @@
   let {
     variables,
     bodyType = $bindable(),
-    requestOptions = $bindable(),
     addNewHeader,
     addNewBodyField,
     addNewParamField,
@@ -86,7 +85,7 @@
     <TabsTrigger value="body">Body</TabsTrigger>
   </TabsList>
   <TabsContent value="headers">
-    {#each requestOptions.headers as header, i}
+    {#each requestStore.request.options.headers as header, i}
       <div class="flex items-center justify-center gap-3">
         <Checkbox bind:checked={header[1].is_active} />
         <Codemirror variables={localVariables} placeholder="key" bind:value={header[0]} />
@@ -103,7 +102,7 @@
     <Button onclick={addNewHeader} class="mt-4 gap-2">Add header <Plus /></Button>
   </TabsContent>
   <TabsContent value="params">
-    {#each requestOptions.params as param, i}
+    {#each requestStore.request.options.params as param, i}
       <div class="flex items-center justify-center gap-3">
         <Checkbox onclick={setParamsToUrl} bind:checked={param[1].is_active} />
         <Codemirror
@@ -135,12 +134,12 @@
         variables={localVariables}
         language={json()}
         isSingleLine={false}
-        bind:value={requestOptions.body.json}
+        bind:value={requestStore.request.options.body.json}
         placeholder="Json body"
       />
     {:else if bodyType === BodyTypeEnum.FORM_DATA}
       <!-- else content here -->
-      {#each requestOptions.body.form_data as body, i}
+      {#each requestStore.request.options.body.form_data as body, i}
         <div class="flex items-center justify-center gap-3">
           <Checkbox bind:checked={body[1].is_active} />
           <Codemirror variables={localVariables} placeholder="key" bind:value={body[0]} />
