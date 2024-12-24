@@ -52,7 +52,6 @@
   })
 
   let selectedEnvironmentId = $state('nope')
-  let requestCollection: null | CollectionConfig = $derived(getCollection())
   let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
   let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
   let needRedrawOfConfig = $state(false)
@@ -75,23 +74,13 @@
       : undefined
   )
 
-  function getCollection() {
-    for (const collection of collectionsStore.collections) {
-      const request = collection.requests.find(({ id }) => id === requestStore.request.id)
-      if (request) {
-        return collection
-      }
-    }
-    return null
-  }
-
   function selectEnvironment() {
-    if (!requestCollection || !requestCollection.environments?.length) {
+    if (!collectionsStore.collection || !collectionsStore.collection.environments?.length) {
       return defaultEnvironment
     }
     needRedrawOfConfig = true
 
-    const environment = requestCollection.environments.find(
+    const environment = collectionsStore.collection.environments.find(
       ({ id }) => id === selectedEnvironmentId
     )
 
@@ -105,14 +94,14 @@
   }
 
   const createNewEnvironment = async (name: string) => {
-    if (!requestCollection) {
+    if (!collectionsStore.collection) {
       return toast.error('Please select a collection to create a new environment')
     }
 
-    if (!requestCollection?.environments) {
-      requestCollection.environments = []
+    if (!collectionsStore.collection?.environments) {
+      collectionsStore.collection.environments = []
     }
-    requestCollection.environments.push({ name, vars: [], id: 'nope' })
+    collectionsStore.collection.environments.push({ name, vars: [], id: 'nope' })
 
     updateCollection()
   }
@@ -122,14 +111,14 @@
   })
 
   const updateCollection = () => {
-    if (!requestCollection) {
+    if (!collectionsStore.collection) {
       return toast.error("Votre requête ne fait partie d'aucune collection", {
         description: "Merci de créer votre collection avant d'enregistrer votre requête"
       })
     }
     invoke('update_collection', {
-      collectionName: requestCollection.name,
-      config: requestCollection
+      collectionName: collectionsStore.collection.name,
+      config: collectionsStore.collection
     })
       .then(() => {
         toast.success('Collection mise à jours')
@@ -371,15 +360,19 @@
 
 {#snippet environmentSelect()}
   <span class="flex min-w-64 max-w-[50%] gap-2">
-    <Select disabled={!requestCollection} type="single" bind:value={selectedEnvironmentId}>
+    <Select
+      disabled={!collectionsStore.collection}
+      type="single"
+      bind:value={selectedEnvironmentId}
+    >
       <SelectTrigger class="col-span-1">
         {selectedEnvironment?.label ?? 'Select your environment'}
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          {#if requestCollection?.environments}
+          {#if collectionsStore.collection?.environments}
             <!-- content here -->
-            {#each requestCollection?.environments as { id, name }}
+            {#each collectionsStore.collection?.environments as { id, name }}
               <SelectItem class="flex justify-between" value={id} label={name}>{name}</SelectItem>
             {/each}
             <SelectItem
