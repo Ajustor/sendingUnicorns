@@ -39,15 +39,7 @@
   }
 </script>
 
-<Dialog>
-  <DialogTrigger
-    disabled={!environmentName}
-    title={`Edit ${environmentName}`}
-    class={`${buttonVariants()} gap-2`}
-  >
-    Edit {environmentName}
-    <Pencil />
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Edit {environmentName}</DialogTitle>
@@ -79,4 +71,16 @@
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger
+    disabled={!environmentName}
+    title={`Edit ${environmentName}`}
+    class={`${buttonVariants()} gap-2`}
+  >
+    Edit {environmentName}
+    <Pencil />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

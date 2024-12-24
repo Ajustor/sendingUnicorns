@@ -142,6 +142,7 @@
   }
 
   let sendRequestPromise: Promise<string> | null = $state(null)
+  let isSending = $state<boolean>(false)
 
   function getBody(hasEnvVars: boolean, envVars: Record<string, string>): BodyTypes {
     if (!requestStore.request) {
@@ -205,6 +206,7 @@
       return
     }
 
+    isSending = true
     sendRequestPromise = new Promise(async (resolve, reject) => {
       const result = await commands.makeApiCall(
         request.method,
@@ -246,7 +248,7 @@
       resolve(result.data)
     })
 
-    sendRequestPromise.finally(() => (sendRequestPromise = null))
+    sendRequestPromise.finally(() => (isSending = false))
   }
 
   const saveParams = debounce((params: [string, Options][]) => {
@@ -432,8 +434,8 @@
         bind:value={requestStore.request.url}
       />
     {/if}
-    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={sendRequestPromise !== null}>
-      {#if sendRequestPromise !== null}
+    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={isSending}>
+      {#if isSending}
         <span class="loading loading-spinner loading-lg"></span>
       {:else}
         Send <Send />

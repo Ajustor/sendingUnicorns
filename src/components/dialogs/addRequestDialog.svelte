@@ -40,10 +40,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog>
-  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a request">
-    Create a request<Plus />
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Create a request</DialogTitle>
@@ -90,4 +87,11 @@
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a request">
+    Create a request<Plus />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

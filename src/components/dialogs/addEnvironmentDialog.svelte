@@ -22,10 +22,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog>
-  <DialogTrigger>
-    <Button title="Create an environment" class="gap-2">Create an environment<Plus /></Button>
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Create an environment</DialogTitle>
@@ -48,4 +45,11 @@
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger>
+    <Button title="Create an environment" class="gap-2">Create an environment<Plus /></Button>
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

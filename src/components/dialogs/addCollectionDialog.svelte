@@ -21,10 +21,7 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog>
-  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a collection">
-    Create a collection<Plus />
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Create a collection</DialogTitle>
@@ -47,4 +44,11 @@
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a collection">
+    Create a collection<Plus />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>
