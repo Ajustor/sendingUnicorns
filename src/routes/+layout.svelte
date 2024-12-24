@@ -16,25 +16,19 @@
 <Toaster />
 <Sidebar.Provider>
   <AppSidebar />
-  <div id="main-view">
-    <nav></nav>
+  <main id="main-view">
+    <nav>
+      <Sidebar.Trigger />
+    </nav>
     <div class="flex">
       {@render children()}
     </div>
-  </div>
+  </main>
 </Sidebar.Provider>
-
-<!-- <div id="main-view">
-  <nav></nav>
-  <div class="flex">
-    {@render children()}
-  </div>
-</div> -->
 
 <style>
   nav {
     display: flex;
-    justify-content: flex-end;
     @apply p-2;
   }
   #main-view {
