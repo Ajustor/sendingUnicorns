@@ -41,17 +41,19 @@ fn create_collection(collection_name: &str, config: structs::CollectionConfig) {
 }
 
 fn import_collection(app_handle: &AppHandle) {
-    let file_path = app_handle.dialog().file().blocking_pick_file();
-    match file_path {
-        Some(path) => {
-            let string_path = path.to_string();
-            let collection_name = string_path.split("/");
-            let file_name = collection_name.last().clone().unwrap();
-            println!("file is {file_name}");
-            // if file_service::is_collection_exists(file_name) {}
+    app_handle.dialog().file().pick_file(|file_path| {
+        match file_path {
+            Some(path) => {
+                let string_path = path.to_string();
+                let collection_name = string_path.split("/");
+                let file_name = collection_name.last().clone().unwrap();
+                println!("file is {file_name}");
+                println!("path is {string_path}");
+                // if file_service::is_collection_exists(file_name) {}
+            }
+            None => {}
         }
-        None => {}
-    }
+    });
 }
 
 #[tauri::command]
