@@ -20,6 +20,18 @@ fn get_collection_path(collection_name: &str) -> String {
     return format!("{base_path}/{collection_name}");
 }
 
+pub fn is_collection_exists(collection_name: &str) -> bool {
+    let base_path = get_collections_path();
+    let path = format!("{base_path}/{collection_name}");
+    match fs::exists(path) {
+        Ok(exists) => return exists,
+        Err(error) => {
+            println!("An error occured {error:?}");
+            return false;
+        }
+    }
+}
+
 pub fn get_collections() -> Vec<CollectionConfig> {
     let path = get_collections_path();
     let files = fs::read_dir(path).expect("Not a folder");

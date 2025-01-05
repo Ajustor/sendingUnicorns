@@ -28,6 +28,8 @@ tauri-specta = { version = "=2.0.0-rc.20", features = ["typescript"] }
 proxy_cfg = "0.4.1"
 specta-typescript = "0.0.7"
 muda = "0.15.3"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

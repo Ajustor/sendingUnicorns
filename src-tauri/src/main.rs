@@ -4,11 +4,12 @@
 use std::fs;
 mod config;
 mod services;
+use tauri_plugin_dialog::DialogExt;
 
 use services::structs::{BodyTypesEnum, RequestParams};
 use specta_typescript::Typescript;
 use tauri::menu::{CheckMenuItem, IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
-use tauri::{Emitter, EventTarget};
+use tauri::{AppHandle, Emitter, EventTarget};
 use tauri_specta::{collect_commands, Builder};
 
 use crate::config::home;
@@ -37,6 +38,20 @@ fn make_api_call(
 #[specta::specta]
 fn create_collection(collection_name: &str, config: structs::CollectionConfig) {
     file_service::write_collection(collection_name, config);
+}
+
+fn import_collection(app_handle: &AppHandle) {
+    let file_path = app_handle.dialog().file().blocking_pick_file();
+    match file_path {
+        Some(path) => {
+            let string_path = path.to_string();
+            let collection_name = string_path.split("/");
+            let file_name = collection_name.last().clone().unwrap();
+            println!("file is {file_name}");
+            // if file_service::is_collection_exists(file_name) {}
+        }
+        None => {}
+    }
 }
 
 #[tauri::command]
@@ -80,7 +95,7 @@ fn main() {
             make_api_call,
             create_collection,
             get_collections,
-            update_collection
+            update_collection,
         ]);
 
     builder
@@ -90,6 +105,8 @@ fn main() {
     let mut ctx = tauri::generate_context!("./tauri.conf.json");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_http::init())
@@ -112,10 +129,12 @@ fn main() {
                 .items(&[&theme_change])
                 .build()?;
 
+            let import_button = MenuItem::with_id(handle, "import", "Import", true, None::<&str>)?;
+
             let save_button =
                 MenuItem::with_id(handle, "save", "Save", true, Some("cmdOrControl+S"))?;
             let file_submenu = SubmenuBuilder::new(handle, "File")
-                .item(&save_button)
+                .items(&[&save_button, &import_button])
                 .items(&[&CheckMenuItem::new(
                     handle,
                     "CheckMenuItem 1",
@@ -150,6 +169,10 @@ fn main() {
 
                 if event.id() == save_button.id() {
                     let _ = handler.emit_to(EventTarget::app(), "save", {});
+                }
+
+                if event.id() == import_button.id() {
+                    let _ = import_collection(handler);
                 }
             });
 
