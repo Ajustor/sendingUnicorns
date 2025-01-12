@@ -41,6 +41,25 @@ fn create_collection(collection_name: &str, config: structs::CollectionConfig) {
 }
 
 fn import_collection(app_handle: &AppHandle) {
+    app_handle
+        .dialog()
+        .file()
+        .pick_file(|file_path| match file_path {
+            Some(path) => {
+                let string_path = path.to_string();
+                let collection_name = string_path.split("/");
+                let file_name = collection_name.last().clone().unwrap();
+                println!("file is {file_name}");
+                println!("path is {string_path}");
+                if file_service::is_collection_exists(file_name) {
+                    file_service::copy_to(file_name, &string_path);
+                }
+            }
+            None => {}
+        });
+}
+
+fn export_collection(app_handle: &AppHandle) {
     app_handle.dialog().file().pick_file(|file_path| {
         match file_path {
             Some(path) => {
