@@ -44,6 +44,7 @@ fn import_collection(app_handle: &AppHandle) {
     app_handle
         .dialog()
         .file()
+        .add_filter("Collection file", &["json"])
         .pick_file(|file_path| match file_path {
             Some(path) => {
                 let string_path = path.to_string();
@@ -52,7 +53,7 @@ fn import_collection(app_handle: &AppHandle) {
                 println!("file is {file_name}");
                 println!("path is {string_path}");
                 if file_service::is_collection_exists(file_name) {
-                    file_service::copy_to(file_name, &string_path);
+                    let _ = file_service::copy_to(file_name, &string_path);
                 }
             }
             None => {}
