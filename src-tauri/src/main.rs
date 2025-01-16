@@ -64,7 +64,7 @@ fn import_collection(app_handle: &AppHandle) {
                 }
                 let collection_path = file_service::get_collection_path(file_name);
                 let _ = file_service::copy_to(string_path.as_str(), &collection_path);
-                handler.emit_to(EventTarget::app(), "reload_collection", {});
+                let _ = handler.emit_to(EventTarget::app(), "reload_collection", {});
             }
             None => {}
         });
