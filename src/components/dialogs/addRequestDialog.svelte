@@ -14,10 +14,9 @@
     SelectTrigger,
     SelectContent,
     SelectItem,
-    SelectGroup,
-    SelectValue
+    SelectGroup
   } from '@lib/components/ui/select'
-  import { Button } from '@lib/components/ui/button'
+  import { Button, buttonVariants } from '@lib/components/ui/button'
   import { Label } from '@lib/components/ui/label'
   import { Input } from '@lib/components/ui/input'
   import { Plus } from 'lucide-svelte'
@@ -41,22 +40,19 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
-  <DialogTrigger>
-    <Button title="Ajouter une requête" class="gap-2">Ajouter une requête<Plus /></Button>
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Ajouter une requête</DialogTitle>
-      <DialogDescription>Entrez les informations relatives à votre requête</DialogDescription>
+      <DialogTitle>Create a request</DialogTitle>
+      <DialogDescription>Enter request informations</DialogDescription>
     </DialogHeader>
     <div class="grid gap-4 py-4">
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="name" class="text-right">Nom de votre requête</Label>
+        <Label for="name" class="text-right">Request's name</Label>
         <Input id="name" bind:value={name} placeholder="Val Jean Jean" class="col-span-3" />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="url" class="text-right">L'url de votre requête</Label>
+        <Label for="url" class="text-right">Request's url</Label>
         <Input
           id="url"
           bind:value={url}
@@ -65,15 +61,10 @@
         />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="method" class="text-right">la méthode de votre requête</Label>
-        <Select
-          selected={selectedMethod}
-          onSelectedChange={(event) => {
-            event && (method = event.value)
-          }}
-        >
+        <Label for="method" class="text-right">Request method</Label>
+        <Select type="single" bind:value={method}>
           <SelectTrigger class="col-span-3">
-            <SelectValue placeholder="Sélectionnez la méthode" />
+            {selectedMethod?.label ?? 'Select method'}
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -92,8 +83,15 @@
           onSend(name, url, method)
         }}
       >
-        Sauvegarder
+        Save
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a request">
+    Create a request<Plus />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

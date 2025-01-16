@@ -2,7 +2,11 @@
   import { Tabs, TabsList, TabsContent, TabsTrigger } from '@lib/components/ui/tabs'
   import { Codemirror } from '@lib/components/codemirror'
 
-  export let result: string
+  type Props = {
+    result: string
+  }
+
+  let { result }: Props = $props()
 </script>
 
 <Tabs class="h-dvh w-full">
@@ -20,6 +24,6 @@
     />
   </TabsContent>
   <TabsContent class="h-full" value="preview">
-    <iframe class="h-full w-full" srcdoc={result} title="résultat de la requête"></iframe>
+    <iframe class="h-full w-full" srcdoc={result} title="Request's result"></iframe>
   </TabsContent>
 </Tabs>

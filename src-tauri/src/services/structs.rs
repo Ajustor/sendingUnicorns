@@ -71,6 +71,7 @@ pub struct BodyTypes {
 #[derive(Debug, Deserialize, Serialize, Clone, Type)]
 pub struct RequestParams {
     pub body: Option<BodyTypes>,
+    #[specta(type = Vec<(String, Value)>)]
     pub params: Option<Vec<(String, Value)>>,
     #[specta(type = Vec<[String; 2]>)]
     pub headers: Option<Vec<[String; 2]>>,
