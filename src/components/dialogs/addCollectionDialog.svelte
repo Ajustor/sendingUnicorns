@@ -9,7 +9,7 @@
     DialogTitle,
     DialogTrigger
   } from '@lib/components/ui/dialog'
-  import { Button } from '@lib/components/ui/button'
+  import { Button, buttonVariants } from '@lib/components/ui/button'
   import { Label } from '@lib/components/ui/label'
   import { Input } from '@lib/components/ui/input'
   import { Plus } from 'lucide-svelte'
@@ -21,18 +21,15 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
-  <DialogTrigger>
-    <Button title="Ajouter une collection" class="gap-2">Ajouter une collection<Plus /></Button>
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Ajouter une collection</DialogTitle>
-      <DialogDescription>Entrez les informations relatives à votre collection</DialogDescription>
+      <DialogTitle>Create a collection</DialogTitle>
+      <DialogDescription>Enter collection informations</DialogDescription>
     </DialogHeader>
     <div class="grid gap-4 py-4">
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="name" class="text-right">Nom de votre collection</Label>
+        <Label for="name" class="text-right">Collection's name</Label>
         <Input id="name" bind:value={name} placeholder="Val Jean Jean" class="col-span-3" />
       </div>
     </div>
@@ -43,8 +40,15 @@
           onSend(name)
         }}
       >
-        Sauvegarder
+        Save
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger class={`${buttonVariants()} gap-2 w-full`} title="Create a collection">
+    Create a collection<Plus />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

@@ -16,8 +16,7 @@
     SelectTrigger,
     SelectContent,
     SelectItem,
-    SelectGroup,
-    SelectValue
+    SelectGroup
   } from '@lib/components/ui/select'
   import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
   import { invoke } from '@tauri-apps/api/core'
@@ -43,20 +42,8 @@
   import { Input } from '@lib/components/ui/input'
   import { BodyTypeEnum } from '@enums/bodyTypes'
   import { listen } from '@tauri-apps/api/event'
-
-  let defaultRequest: Request = $state({
-    name: 'New request',
-    url: '',
-    method: Method.GET,
-    id: 'no-id',
-    options: {
-      body: { form_data: [], json: '' },
-      headers: [],
-      params: []
-    },
-    pre_request_script: null,
-    test: null
-  })
+  import { collectionsStore } from '../stores/collections.svelte'
+  import { requestStore } from '../stores/request.svelte'
 
   let defaultEnvironment: Environment = $state({
     name: 'default',
@@ -64,11 +51,7 @@
     vars: []
   })
 
-  let collections: CollectionConfig[] = $state([])
-  let selectedRequestId = $state('no-id')
   let selectedEnvironmentId = $state('nope')
-  let selectedRequest: Request = $derived(selectRequest())
-  let requestCollection: null | CollectionConfig = $derived(getCollection())
   let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
   let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
   let needRedrawOfConfig = $state(false)
@@ -81,42 +64,23 @@
         }
       : undefined
   )
+
   let selectedMethod = $derived(
-    selectedRequest.method
+    requestStore.request.method
       ? {
-          label: selectedRequest.method.toUpperCase(),
-          value: selectedRequest.method
+          label: requestStore.request.method.toUpperCase(),
+          value: requestStore.request.method
         }
       : undefined
   )
 
-  function selectRequest() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
-      if (request) {
-        return request
-      }
-    }
-    return defaultRequest
-  }
-
-  function getCollection() {
-    for (const collection of collections) {
-      const request = collection.requests.find(({ id }) => id === selectedRequestId)
-      if (request) {
-        return collection
-      }
-    }
-    return null
-  }
-
   function selectEnvironment() {
-    if (!requestCollection || !requestCollection.environments?.length) {
+    if (!collectionsStore.collection || !collectionsStore.collection.environments?.length) {
       return defaultEnvironment
     }
     needRedrawOfConfig = true
 
-    const environment = requestCollection.environments.find(
+    const environment = collectionsStore.collection.environments.find(
       ({ id }) => id === selectedEnvironmentId
     )
 
@@ -129,34 +93,15 @@
     return defaultEnvironment
   }
 
-  const createNewCollection = async (name: string) => {
-    const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
-    await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
-    collections.push(newCollectionToAdd)
-    toast.success('Collection created')
-  }
-
-  const createNewRequest = async (
-    collection: CollectionConfig,
-    name: string,
-    url: string,
-    method: Method
-  ) => {
-    collection.requests.push({ ...defaultRequest, name, url, method })
-    await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collections = await invoke('get_collections')
-    toast.success('Request created')
-  }
-
   const createNewEnvironment = async (name: string) => {
-    if (!requestCollection) {
-      return toast.error("Merci de selectionner une collecion avant d'y ajouter un environnement")
+    if (!collectionsStore.collection) {
+      return toast.error('Please select a collection to create a new environment')
     }
 
-    if (!requestCollection?.environments) {
-      requestCollection.environments = []
+    if (!collectionsStore.collection?.environments) {
+      collectionsStore.collection.environments = []
     }
-    requestCollection.environments.push({ name, vars: [], id: 'nope' })
+    collectionsStore.collection.environments.push({ name, vars: [], id: 'nope' })
 
     updateCollection()
   }
@@ -166,15 +111,13 @@
   })
 
   const updateCollection = () => {
-    if (!requestCollection) {
+    if (!collectionsStore.collection) {
       return toast.error("Votre requête ne fait partie d'aucune collection", {
         description: "Merci de créer votre collection avant d'enregistrer votre requête"
       })
     }
-    invoke('update_collection', {
-      collectionName: requestCollection.name,
-      config: requestCollection
-    })
+    commands
+      .updateCollection(collectionsStore.collection.name, collectionsStore.collection)
       .then(() => {
         toast.success('Collection mise à jours')
       })
@@ -185,13 +128,47 @@
       })
   }
 
-  const getCollections = async () => {
-    collections = await invoke('get_collections')
+  let sendRequestPromise: Promise<string> | null = $state(null)
+  let isSending = $state<boolean>(false)
+
+  function getBody(hasEnvVars: boolean, envVars: Record<string, string>): BodyTypes {
+    if (!requestStore.request) {
+      throw toast.error('An error occured while try to retrieve body')
+    }
+
+    return {
+      json: Mustache.render(
+        requestStore.request.options.body.json,
+        envVars,
+        {},
+        { escape: (s: string) => s }
+      ),
+      form_data: requestStore.request.options.body.form_data.reduce<[string, Options][]>(
+        (acc, [key, { is_active, value }]) => {
+          if (!key || !is_active) {
+            return acc
+          }
+          return [
+            ...acc,
+            [
+              hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
+              {
+                is_active,
+                value:
+                  hasEnvVars && typeof value === 'string'
+                    ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                    : value
+              }
+            ]
+          ]
+        },
+        []
+      )
+    }
   }
 
-  let sendRequestPromise: Promise<string> = $state(Promise.resolve(''))
   const sendRequest = async () => {
-    const hasEnvVars = selectedCollectionEnvironment?.vars.length
+    const hasEnvVars = !!selectedCollectionEnvironment?.vars.length
     let unparsedEnvVars: Record<string, string> = selectedCollectionEnvironment?.vars.reduce(
       (acc, [key, value]) => ({ ...acc, [key]: value }),
       {}
@@ -204,94 +181,78 @@
       }),
       {}
     )
+    const request = requestStore.request
 
-    if (!selectedRequest.url) {
-      toast.error("Merci d'entrer une url")
+    if (!request) {
+      toast.error('An error occured with the request')
       return
     }
 
-    const { promise, resolve, reject } = Promise.withResolvers<string>()
+    if (!request?.url) {
+      toast.error('Please write an url')
+      return
+    }
 
-    sendRequestPromise = promise
-
-    function getBody(): BodyTypes {
-      return {
-        json: Mustache.render(
-          selectedRequest.options.body.json,
-          envVars,
-          {},
-          { escape: (s: string) => s }
-        ),
-        form_data: selectedRequest.options.body.form_data.reduce<[string, Options][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                {
-                  is_active,
-                  value:
-                    hasEnvVars && typeof value === 'string'
-                      ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                      : value
-                }
+    isSending = true
+    sendRequestPromise = new Promise(async (resolve, reject) => {
+      const result = await commands.makeApiCall(
+        request.method,
+        hasEnvVars
+          ? Mustache.render(request.url, envVars, {}, { escape: (s: string) => s })
+          : request.url,
+        {
+          ...request.options,
+          body: getBody(hasEnvVars, envVars),
+          headers: request.options.headers.reduce<[string, string][]>(
+            (acc, [key, { is_active, value }]) => {
+              if (!key || !is_active) {
+                return acc
+              }
+              return [
+                ...acc,
+                [
+                  hasEnvVars
+                    ? Mustache.render(key, envVars, {}, { escape: (s: string) => s })
+                    : key,
+                  hasEnvVars && typeof value === 'string'
+                    ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
+                    : `${value}`
+                ]
               ]
-            ]
-          },
-          []
-        )
+            },
+            []
+          )
+        },
+        bodyType
+      )
+
+      if (result.status === 'error') {
+        //toast.error('An error occured', { description: result.error })
+        reject(result.error)
+        return
       }
-    }
 
-    const result = await commands.makeApiCall(
-      selectedRequest.method,
-      hasEnvVars
-        ? Mustache.render(selectedRequest.url, envVars, {}, { escape: (s: string) => s })
-        : selectedRequest.url,
-      {
-        ...selectedRequest.options,
-        body: getBody(),
-        headers: selectedRequest.options.headers.reduce<[string, string][]>(
-          (acc, [key, { is_active, value }]) => {
-            if (!key || !is_active) {
-              return acc
-            }
-            return [
-              ...acc,
-              [
-                hasEnvVars ? Mustache.render(key, envVars, {}, { escape: (s: string) => s }) : key,
-                hasEnvVars && typeof value === 'string'
-                  ? Mustache.render(value, envVars, {}, { escape: (s: string) => s })
-                  : `${value}`
-              ]
-            ]
-          },
-          []
-        )
-      },
-      bodyType
-    )
+      resolve(result.data)
+    })
 
-    if (result.status === 'error') {
-      toast.error('Une erreur est survenue', { description: result.error })
-      return reject(result.error)
-    }
-
-    resolve(result.data)
+    sendRequestPromise.finally(() => (isSending = false))
   }
 
   const saveParams = debounce((params: [string, Options][]) => {
-    selectedRequest.options.params = params
+    if (!requestStore.request) {
+      return
+    }
+    requestStore.request.options.params = params
   }, 600)
 
   const setParamsInUrl = debounce((url: string) => {
-    const hasOptions = selectedRequest.options.params.some(([, { is_active }]) => is_active)
-    selectedRequest.url = `${url}${
+    if (!requestStore.request) {
+      return
+    }
+    const hasOptions = requestStore.request.options.params.some(([, { is_active }]) => is_active)
+    requestStore.request.url = `${url}${
       hasOptions
-        ? `?${selectedRequest.options.params
+        ? `?${requestStore.request.options.params
             .reduce<string[]>((params, [key, { value, is_active }]) => {
               if (!is_active) {
                 return params
@@ -305,7 +266,11 @@
   }, 600)
 
   $effect(() => {
-    const [url, requestParams] = selectedRequest.url.split('?')
+    if (!requestStore.request) {
+      return
+    }
+
+    const [url, requestParams] = requestStore.request.url.split('?')
 
     if (!url) {
       return
@@ -322,36 +287,43 @@
   })
 
   const setParamsToUrl = () => {
-    const [url] = selectedRequest.url.split('?')
-    if (selectedRequest.options.params.length) {
+    if (!requestStore.request) {
+      return
+    }
+
+    const [url] = requestStore.request.url.split('?')
+    if (requestStore.request.options.params.length) {
       setParamsInUrl(url)
     }
   }
 
   function addNewHeader() {
-    selectedRequest.options.headers.push(['', { is_active: true, value: '' }])
+    requestStore.request.options.headers.push(['', { is_active: true, value: '' }])
   }
 
   function addNewBodyField() {
-    selectedRequest.options.body.form_data.push(['', { is_active: true, value: '' }])
+    requestStore.request.options.body.form_data.push(['', { is_active: true, value: '' }])
   }
 
   function addNewParamField() {
-    selectedRequest.options.params = [
-      ...selectedRequest.options.params,
+    if (!requestStore.request) {
+      return
+    }
+    requestStore.request.options.params = [
+      ...requestStore.request.options.params,
       ['', { is_active: true, value: '' }]
     ]
   }
 
   function deleteBody(i: number) {
-    selectedRequest.options.body.form_data.splice(i, 1)
+    requestStore.request.options.body.form_data.splice(i, 1)
   }
 
   function deleteHeader(i: number) {
-    selectedRequest.options.headers.splice(i, 1)
+    requestStore.request.options.headers.splice(i, 1)
   }
   function deleteParam(i: number) {
-    selectedRequest.options.params.splice(i, 1)
+    requestStore.request.options.params.splice(i, 1)
   }
 </script>
 
@@ -361,7 +333,6 @@
     <RequestConfig
       variables={selectedCollectionEnvironment.vars}
       bind:bodyType
-      bind:requestOptions={selectedRequest.options}
       {addNewHeader}
       {addNewBodyField}
       {addNewParamField}
@@ -375,13 +346,12 @@
 
 {#snippet resultView()}
   {#await sendRequestPromise}
-    <!-- promise is pending -->
     sending unicorns...
   {:then result}
-    <!-- promise was fulfilled -->
-    <RequestResultViewer {result} />
+    {#if result !== null}
+      <RequestResultViewer {result} />
+    {/if}
   {:catch error}
-    <!-- promise was rejected -->
     {error}
   {/await}
 {/snippet}
@@ -389,20 +359,18 @@
 {#snippet environmentSelect()}
   <span class="flex min-w-64 max-w-[50%] gap-2">
     <Select
-      disabled={!requestCollection}
-      selected={selectedEnvironment}
-      onSelectedChange={(v) => {
-        v && (selectedEnvironmentId = v.value)
-      }}
+      disabled={!collectionsStore.collection}
+      type="single"
+      bind:value={selectedEnvironmentId}
     >
       <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Sélectionnez l'environnement" />
+        {selectedEnvironment?.label ?? 'Select your environment'}
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          {#if requestCollection?.environments}
+          {#if collectionsStore.collection?.environments}
             <!-- content here -->
-            {#each requestCollection?.environments as { id, name }}
+            {#each collectionsStore.collection?.environments as { id, name }}
               <SelectItem class="flex justify-between" value={id} label={name}>{name}</SelectItem>
             {/each}
             <SelectItem
@@ -428,75 +396,49 @@
   </span>
 {/snippet}
 
-{#await getCollections() then _}
-  <aside class="h-full max-w-md border-r p-4">
-    <AddCollectionDialog onSend={createNewCollection} />
-    {#if collections.length}
-      <!-- content here -->
-      <ScrollArea class="collection-list rounded-md border p-4">
-        <Accordion>
-          {#each collections as collection}
-            <AccordionItem value={collection.name}>
-              <AccordionTrigger>{collection.name}</AccordionTrigger>
-              <AccordionContent>
-                <AddRequestDialog
-                  onSend={(name: string, url: string, method: Method) =>
-                    createNewRequest(collection, name, url, method)}
-                />
-                <RadioGroup class="p-4" bind:value={selectedRequestId}>
-                  {#each collection.requests as request}
-                    <div class="flex items-center space-x-2">
-                      <RadioGroupItem value={request.id} id={request.name} />
-                      <Label for={request.name}>{request.name}</Label>
-                    </div>
-                  {/each}
-                </RadioGroup>
-              </AccordionContent>
-            </AccordionItem>
-          {/each}
-        </Accordion>
-      </ScrollArea>
-    {/if}
-  </aside>
-{/await}
-
 <div id="main">
   <div class="flex justify-between">
-    <Input bind:value={selectedRequest.name} class="border-0" />
+    {#if requestStore.request}
+      <Input bind:value={requestStore.request.name} class="border-0" />
+    {/if}
     {@render environmentSelect()}
   </div>
   <div class="grid grid-cols-5 gap-2 p-2">
-    <Select
-      selected={selectedMethod}
-      onSelectedChange={(v) => {
-        v && (selectedRequest.method = v.value)
-      }}
-    >
-      <SelectTrigger class="col-span-1">
-        <SelectValue placeholder="Sélectionnez la méthode" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {#each Object.entries(Method) as [key, value]}
-            <SelectItem {value} label={key}>{key}</SelectItem>
-          {/each}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-    <Codemirror
-      class="col-span-3"
-      placeholder="url"
-      variables={selectedCollectionEnvironment.vars}
-      bind:value={selectedRequest.url}
-    />
-    <Button class="col-span-1 gap-2" onclick={sendRequest}>Envoyer <Send /></Button>
+    {#if requestStore.request}
+      <!-- content here -->
+      <Select type="single" bind:value={requestStore.request.method}>
+        <SelectTrigger class="col-span-1">
+          {selectedMethod?.label ?? 'Select your method'}
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {#each Object.entries(Method) as [key, value]}
+              <SelectItem {value} label={key}>{key}</SelectItem>
+            {/each}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Codemirror
+        class="col-span-3"
+        placeholder="url"
+        variables={selectedCollectionEnvironment.vars}
+        bind:value={requestStore.request.url}
+      />
+    {/if}
+    <Button class="col-span-1 gap-2" onclick={sendRequest} disabled={isSending}>
+      {#if isSending}
+        <span class="loading loading-spinner loading-lg"></span>
+      {:else}
+        Send <Send />
+      {/if}
+    </Button>
   </div>
 
   <Tabs class="h-dvh w-full">
     <TabsList>
       <TabsTrigger value="config">Configuration</TabsTrigger>
-      <TabsTrigger value="combo">Vue scindée</TabsTrigger>
-      <TabsTrigger value="result">Résultats</TabsTrigger>
+      <TabsTrigger value="combo">Split view</TabsTrigger>
+      <TabsTrigger value="result">Results</TabsTrigger>
     </TabsList>
     <TabsContent value="config">
       {@render configView()}

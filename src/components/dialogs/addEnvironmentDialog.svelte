@@ -22,19 +22,16 @@
   let { onSend }: Props = $props()
 </script>
 
-<Dialog closeOnOutsideClick>
-  <DialogTrigger>
-    <Button title="Ajouter un environnement" class="gap-2">Ajouter un environnement<Plus /></Button>
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Ajouter un environnement</DialogTitle>
-      <DialogDescription>Entrez les informations relatives à votre environnement</DialogDescription>
+      <DialogTitle>Create an environment</DialogTitle>
+      <DialogDescription>Enter environment informations</DialogDescription>
     </DialogHeader>
     <div class="grid gap-4 py-4">
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label for="name" class="text-right">Nom de votre environnement</Label>
-        <Input id="name" bind:value={name} placeholder="la prod" class="col-span-3" />
+        <Label for="name" class="text-right">Environment's name</Label>
+        <Input id="name" bind:value={name} placeholder="The prod" class="col-span-3" />
       </div>
     </div>
     <DialogFooter>
@@ -44,8 +41,15 @@
           onSend(name)
         }}
       >
-        Sauvegarder
+        Save
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger>
+    <Button title="Create an environment" class="gap-2">Create an environment<Plus /></Button>
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

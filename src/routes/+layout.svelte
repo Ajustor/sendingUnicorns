@@ -1,33 +1,68 @@
 <script lang="ts">
   import '../app.css'
-  import { ModeWatcher, toggleMode, mode } from 'mode-watcher'
+  import { ModeWatcher, toggleMode } from 'mode-watcher'
   import { Toaster } from '$lib/components/ui/sonner'
   import { listen } from '@tauri-apps/api/event'
+  import * as Sidebar from '$lib/components/ui/sidebar/index.js'
+  import AppSidebar from '@components/app-sidebar.svelte'
+  import ExportCollectionDialog from '@components/dialogs/exportCollectionDialog.svelte'
+  import { collectionsStore } from '../stores/collections.svelte'
+  import { commands } from '../tauriApi'
 
   let { children } = $props()
   listen('toggle-theme', () => {
     toggleMode()
   })
+
+  let open = $state(false)
+  listen('export', () => {
+    open = true
+  })
+
+  listen('reload_collection', async () => {
+    open = true
+    collectionsStore.collections = await commands.getCollections()
+  })
+
+  const exportCollection = (selectedCollection: string) => {
+    commands.exportCollection(selectedCollection)
+    open = false
+  }
+
+  $effect(() => {
+    commands.getCollections().then((collections) => {
+      collectionsStore.collections = collections
+    })
+  })
 </script>
+
+<ExportCollectionDialog
+  bind:open
+  collections={collectionsStore.collections.map(({ name }) => name)}
+  onSend={exportCollection}
+/>
 
 <ModeWatcher />
 <Toaster />
-
-<div id="main-view">
-  <nav></nav>
-  <div class="flex">
-    {@render children()}
-  </div>
-</div>
+<Sidebar.Provider>
+  <AppSidebar />
+  <main id="main-view">
+    <nav>
+      <Sidebar.Trigger />
+    </nav>
+    <div class="flex">
+      {@render children()}
+    </div>
+  </main>
+</Sidebar.Provider>
 
 <style>
   nav {
     display: flex;
-    justify-content: flex-end;
     @apply p-2;
   }
   #main-view {
-    @apply h-full max-h-dvh overflow-hidden;
+    @apply h-full max-h-dvh w-full overflow-hidden;
     display: flex;
     flex-direction: column;
   }

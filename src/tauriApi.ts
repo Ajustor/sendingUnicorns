@@ -21,6 +21,9 @@ async getCollections() : Promise<CollectionConfig[]> {
 },
 async updateCollection(collectionName: string, config: CollectionConfig) : Promise<void> {
     await TAURI_INVOKE("update_collection", { collectionName, config });
+},
+async exportCollection(collectionName: string) : Promise<void> {
+    await TAURI_INVOKE("export_collection", { collectionName });
 }
 }
 
@@ -43,7 +46,7 @@ export type JsonValue = null | boolean | number | string | JsonValue[] | { [key 
 export type Options = { is_active: boolean; value: DynamicValue }
 export type Request = { name: string; url: string; method: string; id: string; pre_request_script: string | null; test: string | null; options: RequestOptions }
 export type RequestOptions = { body: BodyTypes; params: ([string, Options])[]; headers: ([string, Options])[] }
-export type RequestParams = { body: BodyTypes | null; params: ([string, JsonValue])[] | null; headers: ([string, string])[] }
+export type RequestParams = { body: BodyTypes | null; params: ([string, JsonValue])[]; headers: ([string, string])[] }
 
 /** tauri-specta globals **/
 

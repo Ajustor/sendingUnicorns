@@ -10,7 +10,7 @@
     DialogTrigger
   } from '@lib/components/ui/dialog'
 
-  import { Button } from '@lib/components/ui/button'
+  import { Button, buttonVariants } from '@lib/components/ui/button'
   import { Input } from '@lib/components/ui/input'
   import { Pencil, Plus, Trash } from 'lucide-svelte'
 
@@ -39,16 +39,11 @@
   }
 </script>
 
-<Dialog closeOnOutsideClick>
-  <DialogTrigger>
-    <Button disabled={!environmentName} title={`Modifier ${environmentName}`} class="gap-2"
-      ><Pencil /></Button
-    >
-  </DialogTrigger>
+{#snippet dialogContent()}
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>Modifier {environmentName}</DialogTitle>
-      <DialogDescription>Entrez les informations relatives à votre environnement</DialogDescription>
+      <DialogTitle>Edit {environmentName}</DialogTitle>
+      <DialogDescription>Enter environment informations</DialogDescription>
     </DialogHeader>
     {#if environmentVariables}
       <!-- content here -->
@@ -56,14 +51,14 @@
         <div class="flex items-center justify-center gap-3">
           <Input placeholder="key" bind:value={envVar[0]} />
           <Input placeholder="value" bind:value={envVar[1]} />
-          <Button onclick={() => deleteVar(i)} class="gap-2" title="Supprimer la variable">
+          <Button onclick={() => deleteVar(i)} class="gap-2" title="Delete variable">
             <Trash />
           </Button>
         </div>
       {/each}
     {/if}
     <Button onclick={addNewVar} class="mt-4 gap-2">
-      Ajouter une nouvelle variable <Plus />
+      Add a new variable <Plus />
     </Button>
     <DialogFooter>
       <Close
@@ -72,8 +67,20 @@
           onSend(name)
         }}
       >
-        Sauvegarder
+        save
       </Close>
     </DialogFooter>
   </DialogContent>
+{/snippet}
+
+<Dialog>
+  <DialogTrigger
+    disabled={!environmentName}
+    title={`Edit ${environmentName}`}
+    class={`${buttonVariants()} gap-2`}
+  >
+    Edit {environmentName}
+    <Pencil />
+  </DialogTrigger>
+  {@render dialogContent()}
 </Dialog>

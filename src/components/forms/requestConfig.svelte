@@ -10,16 +10,15 @@
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectTrigger,
-    SelectValue
+    SelectTrigger
   } from '@lib/components/ui/select'
   import { json } from '@codemirror/lang-json'
   import { BodyTypeEnum } from '@enums/bodyTypes'
+  import { requestStore } from '../../stores/request.svelte'
 
   type Props = {
     variables: [string, string][]
     bodyType: BodyTypesEnum
-    requestOptions: RequestOptions
     addNewHeader: () => void
     addNewBodyField: () => void
     addNewParamField: () => void
@@ -32,7 +31,6 @@
   let {
     variables,
     bodyType = $bindable(),
-    requestOptions = $bindable(),
     addNewHeader,
     addNewBodyField,
     addNewParamField,
@@ -55,14 +53,9 @@
 </script>
 
 {#snippet bodyTypeSelector()}
-  <Select
-    selected={selectedBodyType}
-    onSelectedChange={(v) => {
-      v && (bodyType = v.value)
-    }}
-  >
+  <Select type="single" bind:value={bodyType}>
     <SelectTrigger class="col-span-1">
-      <SelectValue placeholder="Sélectionnez l'environnement" />
+      {selectedBodyType?.label ?? 'Select environment'}
     </SelectTrigger>
     <SelectContent>
       <SelectGroup>
@@ -88,11 +81,11 @@
 <Tabs>
   <TabsList>
     <TabsTrigger value="headers">Headers</TabsTrigger>
-    <TabsTrigger value="params">Paramètres</TabsTrigger>
+    <TabsTrigger value="params">Params</TabsTrigger>
     <TabsTrigger value="body">Body</TabsTrigger>
   </TabsList>
   <TabsContent value="headers">
-    {#each requestOptions.headers as header, i}
+    {#each requestStore.request.options.headers as header, i}
       <div class="flex items-center justify-center gap-3">
         <Checkbox bind:checked={header[1].is_active} />
         <Codemirror variables={localVariables} placeholder="key" bind:value={header[0]} />
@@ -101,17 +94,17 @@
           placeholder="value"
           bind:value={header[1].value as string}
         />
-        <Button onclick={() => deleteHeader(i)} class="gap-2" title="Supprimer la valeur">
+        <Button onclick={() => deleteHeader(i)} class="gap-2" title="Delete">
           <Trash />
         </Button>
       </div>
     {/each}
-    <Button onclick={addNewHeader} class="mt-4 gap-2">Ajouter un header <Plus /></Button>
+    <Button onclick={addNewHeader} class="mt-4 gap-2">Add header <Plus /></Button>
   </TabsContent>
   <TabsContent value="params">
-    {#each requestOptions.params as param, i}
+    {#each requestStore.request.options.params as param, i}
       <div class="flex items-center justify-center gap-3">
-        <Checkbox on:click={setParamsToUrl} bind:checked={param[1].is_active} />
+        <Checkbox onclick={setParamsToUrl} bind:checked={param[1].is_active} />
         <Codemirror
           variables={localVariables}
           onkeyup={setParamsToUrl}
@@ -124,13 +117,13 @@
           placeholder="value"
           bind:value={param[1].value as string}
         />
-        <Button onclick={() => deleteParam(i)} class="gap-2" title="Supprimer la valeur">
+        <Button onclick={() => deleteParam(i)} class="gap-2" title="Delete">
           <Trash />
         </Button>
       </div>
     {/each}
     <Button onclick={addNewParamField} class="mt-4 gap-2">
-      Ajouter un élément dans les paramètres <Plus />
+      Add param <Plus />
     </Button>
   </TabsContent>
   <TabsContent value="body">
@@ -141,13 +134,12 @@
         variables={localVariables}
         language={json()}
         isSingleLine={false}
-        bind:value={requestOptions.body.json}
+        bind:value={requestStore.request.options.body.json}
         placeholder="Json body"
       />
     {:else if bodyType === BodyTypeEnum.FORM_DATA}
-      FORM DATA
       <!-- else content here -->
-      {#each requestOptions.body.form_data as body, i}
+      {#each requestStore.request.options.body.form_data as body, i}
         <div class="flex items-center justify-center gap-3">
           <Checkbox bind:checked={body[1].is_active} />
           <Codemirror variables={localVariables} placeholder="key" bind:value={body[0]} />
@@ -156,13 +148,13 @@
             placeholder="value"
             bind:value={body[1].value as string}
           />
-          <Button onclick={() => deleteBody(i)} class="gap-2" title="Supprimer la valeur">
+          <Button onclick={() => deleteBody(i)} class="gap-2" title="Delete">
             <Trash />
           </Button>
         </div>
       {/each}
       <Button onclick={addNewBodyField} class="mt-4 gap-2">
-        Ajouter un élément dans le corps <Plus />
+        Add body element <Plus />
       </Button>
     {/if}
   </TabsContent>
