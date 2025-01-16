@@ -10,17 +10,17 @@ use crate::services::structs::{BodyTypes, CollectionConfig, Options};
 use super::old_structs::{BodyTypesConverter, OldCollectionConfig};
 use super::structs::{Request, RequestOptions};
 
-fn get_collections_path() -> String {
+pub fn get_collections_path() -> String {
     let base_path = home::get();
     return format!("{base_path}/collections");
 }
 
-pub fn copy_to(collection_name: &str, to: &str) -> std::io::Result<()> {
-    fs::copy(get_collection_path(collection_name), to)?;
+pub fn copy_to(from: &str, to: &str) -> std::io::Result<()> {
+    fs::copy(from, to)?;
     Ok(())
 }
 
-fn get_collection_path(collection_name: &str) -> String {
+pub fn get_collection_path(collection_name: &str) -> String {
     let base_path = get_collections_path();
     return format!("{base_path}/{collection_name}");
 }

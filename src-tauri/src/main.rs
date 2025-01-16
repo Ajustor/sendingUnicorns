@@ -4,7 +4,7 @@
 use std::fs;
 mod config;
 mod services;
-use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 
 use services::structs::{BodyTypesEnum, RequestParams};
 use specta_typescript::Typescript;
@@ -41,6 +41,10 @@ fn create_collection(collection_name: &str, config: structs::CollectionConfig) {
 }
 
 fn import_collection(app_handle: &AppHandle) {
+    let already_exists_modal = app_handle
+        .dialog()
+        .message("This collection already exist. Do you want to replace it ?")
+        .buttons(MessageDialogButtons::YesNo);
     app_handle
         .dialog()
         .file()
@@ -50,30 +54,43 @@ fn import_collection(app_handle: &AppHandle) {
                 let string_path = path.to_string();
                 let collection_name = string_path.split("/");
                 let file_name = collection_name.last().clone().unwrap();
-                println!("file is {file_name}");
-                println!("path is {string_path}");
                 if file_service::is_collection_exists(file_name) {
-                    let _ = file_service::copy_to(file_name, &string_path);
+                    already_exists_modal.show(|yes| {
+                        if !yes {
+                            return;
+                        }
+                    });
                 }
+                let collection_path = file_service::get_collection_path(file_name);
+                let _ = file_service::copy_to(string_path.as_str(), &collection_path);
             }
             None => {}
         });
 }
 
-fn export_collection(app_handle: &AppHandle) {
-    app_handle.dialog().file().pick_file(|file_path| {
-        match file_path {
-            Some(path) => {
-                let string_path = path.to_string();
-                let collection_name = string_path.split("/");
-                let file_name = collection_name.last().clone().unwrap();
-                println!("file is {file_name}");
-                println!("path is {string_path}");
-                // if file_service::is_collection_exists(file_name) {}
+#[tauri::command]
+#[specta::specta]
+fn export_collection(app_handle: tauri::AppHandle, collection_name: &str) {
+    let file_name = format!("{collection_name}.json");
+    let collection_path = file_service::get_collection_path(collection_name);
+
+    app_handle
+        .dialog()
+        .file()
+        .set_file_name(file_name)
+        .save_file(move |save_path| {
+            match save_path {
+                Some(path) => {
+                    let string_path = path.to_string();
+                    let _ = file_service::copy_to(
+                        format!("{collection_path}.json").as_str(),
+                        &string_path,
+                    );
+                    // if file_service::is_collection_exists(file_name) {}
+                }
+                None => {}
             }
-            None => {}
-        }
-    });
+        });
 }
 
 #[tauri::command]
@@ -118,6 +135,7 @@ fn main() {
             create_collection,
             get_collections,
             update_collection,
+            export_collection
         ]);
 
     builder
@@ -152,18 +170,19 @@ fn main() {
                 .build()?;
 
             let import_button = MenuItem::with_id(handle, "import", "Import", true, None::<&str>)?;
+            let export_button = MenuItem::with_id(handle, "export", "Export", true, None::<&str>)?;
 
             let save_button =
                 MenuItem::with_id(handle, "save", "Save", true, Some("cmdOrControl+S"))?;
             let file_submenu = SubmenuBuilder::new(handle, "File")
-                .items(&[&save_button, &import_button])
-                .items(&[&CheckMenuItem::new(
-                    handle,
-                    "CheckMenuItem 1",
-                    true,
-                    true,
-                    None::<&str>,
-                )?])
+                .items(&[&save_button, &import_button, &export_button])
+                // .items(&[&CheckMenuItem::new(
+                //     handle,
+                //     "CheckMenuItem 1",
+                //     true,
+                //     true,
+                //     None::<&str>,
+                // )?])
                 .separator()
                 .cut()
                 .copy()
@@ -195,6 +214,10 @@ fn main() {
 
                 if event.id() == import_button.id() {
                     let _ = import_collection(handler);
+                }
+
+                if event.id() == export_button.id() {
+                    let _ = handler.emit_to(EventTarget::app(), "export", {});
                 }
             });
 

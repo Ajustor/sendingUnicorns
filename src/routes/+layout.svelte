@@ -5,12 +5,31 @@
   import { listen } from '@tauri-apps/api/event'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import AppSidebar from '@components/app-sidebar.svelte'
+  import ExportCollectionDialog from '@components/dialogs/exportCollectionDialog.svelte'
+  import { collectionsStore } from '../stores/collections.svelte'
+  import { commands } from '../tauriApi'
 
   let { children } = $props()
   listen('toggle-theme', () => {
     toggleMode()
   })
+
+  let open = $state(false)
+  listen('export', () => {
+    console.log('Open collection selection modal')
+    open = true
+  })
+
+  const exportCollection = (selectedCollection: string) => {
+    commands.exportCollection(selectedCollection)
+  }
 </script>
+
+<ExportCollectionDialog
+  bind:open
+  collections={collectionsStore.collections.map(({ name }) => name)}
+  onSend={exportCollection}
+/>
 
 <ModeWatcher />
 <Toaster />

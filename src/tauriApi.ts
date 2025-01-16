@@ -21,6 +21,9 @@ async getCollections() : Promise<CollectionConfig[]> {
 },
 async updateCollection(collectionName: string, config: CollectionConfig) : Promise<void> {
     await TAURI_INVOKE("update_collection", { collectionName, config });
+},
+async exportCollection(collectionName: string) : Promise<void> {
+    await TAURI_INVOKE("export_collection", { collectionName });
 }
 }
 
