@@ -45,11 +45,12 @@ fn import_collection(app_handle: &AppHandle) {
         .dialog()
         .message("This collection already exist. Do you want to replace it ?")
         .buttons(MessageDialogButtons::YesNo);
+    let handler = app_handle.clone();
     app_handle
         .dialog()
         .file()
         .add_filter("Collection file", &["json"])
-        .pick_file(|file_path| match file_path {
+        .pick_file(move |file_path| match file_path {
             Some(path) => {
                 let string_path = path.to_string();
                 let collection_name = string_path.split("/");
@@ -63,6 +64,7 @@ fn import_collection(app_handle: &AppHandle) {
                 }
                 let collection_path = file_service::get_collection_path(file_name);
                 let _ = file_service::copy_to(string_path.as_str(), &collection_path);
+                handler.emit_to(EventTarget::app(), "reload_collection", {});
             }
             None => {}
         });
@@ -78,18 +80,13 @@ fn export_collection(app_handle: tauri::AppHandle, collection_name: &str) {
         .dialog()
         .file()
         .set_file_name(file_name)
-        .save_file(move |save_path| {
-            match save_path {
-                Some(path) => {
-                    let string_path = path.to_string();
-                    let _ = file_service::copy_to(
-                        format!("{collection_path}.json").as_str(),
-                        &string_path,
-                    );
-                    // if file_service::is_collection_exists(file_name) {}
-                }
-                None => {}
+        .save_file(move |save_path| match save_path {
+            Some(path) => {
+                let string_path = path.to_string();
+                let _ =
+                    file_service::copy_to(format!("{collection_path}.json").as_str(), &string_path);
             }
+            None => {}
         });
 }
 

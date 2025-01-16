@@ -116,10 +116,8 @@
         description: "Merci de créer votre collection avant d'enregistrer votre requête"
       })
     }
-    invoke('update_collection', {
-      collectionName: collectionsStore.collection.name,
-      config: collectionsStore.collection
-    })
+    commands
+      .updateCollection(collectionsStore.collection.name, collectionsStore.collection)
       .then(() => {
         toast.success('Collection mise à jours')
       })

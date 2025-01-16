@@ -16,13 +16,24 @@
 
   let open = $state(false)
   listen('export', () => {
-    console.log('Open collection selection modal')
     open = true
+  })
+
+  listen('reload_collection', async () => {
+    open = true
+    collectionsStore.collections = await commands.getCollections()
   })
 
   const exportCollection = (selectedCollection: string) => {
     commands.exportCollection(selectedCollection)
+    open = false
   }
+
+  $effect(() => {
+    commands.getCollections().then((collections) => {
+      collectionsStore.collections = collections
+    })
+  })
 </script>
 
 <ExportCollectionDialog

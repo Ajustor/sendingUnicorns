@@ -3,7 +3,7 @@
   import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
   import { invoke } from '@tauri-apps/api/core'
   import { toast } from 'svelte-sonner'
-  import type { CollectionConfig, Request } from '../tauriApi'
+  import { commands, type CollectionConfig, type Request } from '../tauriApi'
   import {
     Accordion,
     AccordionContent,
@@ -32,7 +32,7 @@
 
   const createNewCollection = async (name: string) => {
     const newCollectionToAdd: CollectionConfig = { name, requests: [], environments: [] }
-    await invoke('create_collection', { collectionName: name, config: newCollectionToAdd })
+    await commands.createCollection(name, newCollectionToAdd)
     collectionsStore.collections.push(newCollectionToAdd)
     toast.success('Collection created')
   }
@@ -45,16 +45,10 @@
   ) => {
     collection.requests.push({ ...defaultRequest, name, url, method })
     await invoke('update_collection', { collectionName: collection.name, config: collection })
-    collectionsStore.collections = await invoke('get_collections')
+    collectionsStore.collections = await commands.getCollections()
     toast.success('Request created')
   }
   let selectedRequestId = $state('no-id')
-
-  $effect(() => {
-    invoke<CollectionConfig[]>('get_collections').then((collections) => {
-      collectionsStore.collections = collections
-    })
-  })
 
   $effect(selectRequest)
 
