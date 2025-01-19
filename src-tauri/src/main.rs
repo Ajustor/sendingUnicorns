@@ -10,6 +10,7 @@ use services::structs::{BodyTypesEnum, RequestParams};
 use specta_typescript::Typescript;
 use tauri::menu::{CheckMenuItem, IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, EventTarget};
+use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::{collect_commands, Builder};
 
 use crate::config::home;
@@ -119,6 +120,30 @@ fn migrate() -> std::io::Result<()> {
     Ok(())
 }
 
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    if let Some(update) = app.updater()?.check().await? {
+        let mut downloaded = 0;
+
+        // alternatively we could also call update.download() and update.install() separately
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    println!("downloaded {downloaded} from {content_length:?}");
+                },
+                || {
+                    println!("download finished");
+                },
+            )
+            .await?;
+
+        println!("update installed");
+        app.restart();
+    }
+
+    Ok(())
+}
+
 fn main() {
     let config_creation = init();
     if config_creation.is_err() {
@@ -150,7 +175,12 @@ fn main() {
         .plugin(tauri_plugin_theme::init(ctx.config_mut()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
+            let cloned_handler = app.handle().clone();
             let handle = app.handle();
+
+            tauri::async_runtime::spawn(async move {
+                update(cloned_handler).await.unwrap();
+            });
 
             builder.mount_events(app);
 
