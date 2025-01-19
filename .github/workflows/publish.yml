@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - 'release-v*'
+      - 'beta-v*'
 
 jobs:
   publish-tauri:
