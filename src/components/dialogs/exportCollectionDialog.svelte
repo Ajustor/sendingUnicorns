@@ -34,7 +34,7 @@
       <div class="grid grid-cols-4 items-center gap-4">
         <Select type="single" bind:value={selectedCollection}>
           <SelectTrigger class="col-span-3">
-            {selectedCollection ?? 'Select collection'}
+            {selectedCollection || 'Select collection'}
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

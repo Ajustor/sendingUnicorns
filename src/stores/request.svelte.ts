@@ -19,6 +19,7 @@ export const requestStore = {
   get request() {
     return request
   },
+
   set request(value: Request) {
     request = value
   }

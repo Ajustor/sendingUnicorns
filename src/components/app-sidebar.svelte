@@ -50,9 +50,7 @@
   }
   let selectedRequestId = $state('no-id')
 
-  $effect(selectRequest)
-
-  function selectRequest() {
+  $effect(() => {
     for (const collection of collectionsStore.collections) {
       const request = collection.requests.find(({ id }) => id === selectedRequestId)
       if (request) {
@@ -61,7 +59,7 @@
       }
     }
     requestStore.request = defaultRequest
-  }
+  })
 </script>
 
 <Sidebar.Root>

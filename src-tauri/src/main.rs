@@ -8,7 +8,7 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 
 use services::structs::{BodyTypesEnum, RequestParams};
 use specta_typescript::Typescript;
-use tauri::menu::{CheckMenuItem, IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
+use tauri::menu::{IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, EventTarget};
 use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::{collect_commands, Builder};

@@ -1,3 +1,9 @@
+## v0.2.2 (2025-01-20)
+
+## Bug fixes:
+
+- Fixing renderer issues
+
 ## v0.2.1 (2025-01-19)
 
 Third candidate to beta testing

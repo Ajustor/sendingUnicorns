@@ -1,16 +1,7 @@
 <script lang="ts">
-  import { Label } from '@lib/components/ui/label'
   import { Button } from '@lib/components/ui/button'
-  import { ScrollArea } from '@lib/components/ui/scroll-area'
-  import { AddCollectionDialog, AddRequestDialog } from '@components/dialogs'
   import { RequestResultViewer } from '@components/requestResult'
   import { RequestConfig } from '@components/forms'
-  import {
-    Accordion,
-    AccordionItem,
-    AccordionTrigger,
-    AccordionContent
-  } from '@lib/components/ui/accordion'
   import {
     Select,
     SelectTrigger,
@@ -18,8 +9,6 @@
     SelectItem,
     SelectGroup
   } from '@lib/components/ui/select'
-  import { RadioGroup, RadioGroupItem } from '@lib/components/ui/radio-group'
-  import { invoke } from '@tauri-apps/api/core'
   import { Method } from '@enums/methods'
   import { Send } from 'lucide-svelte'
   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/components/ui/tabs'
@@ -27,8 +16,6 @@
   import { toast } from 'svelte-sonner'
   import {
     commands,
-    type Request,
-    type CollectionConfig,
     type Options,
     type Environment,
     type BodyTypes,
