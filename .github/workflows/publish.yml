@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: olegtarasov/get-tag@v2.1.4
+        id: tagName
+
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
         run: |
@@ -62,8 +65,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: 
         with:
-          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          releaseName: 'App v__VERSION__'
+          tagName: ${{ steps.tagName.outputs.tag }} # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: 'Sending Unicorns ${{ steps.tagName.outputs.tag }}'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
