@@ -94,8 +94,7 @@ fn export_collection(app_handle: tauri::AppHandle, collection_name: &str) {
 #[tauri::command]
 #[specta::specta]
 fn update_collection(collection_name: &str, config: structs::CollectionConfig) {
-    file_service::delete_collection(collection_name);
-    file_service::write_collection(collection_name, config);
+    file_service::update_collection(collection_name, config);
 }
 
 #[tauri::command]

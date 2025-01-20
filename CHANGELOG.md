@@ -1,3 +1,14 @@
+## v0.2.3 (2025-01-20)
+
+## Enhancements
+
+- Start reworking environment system
+
+## Bug fixes:
+
+- Fixing renderer issues
+- Use new method to update collections
+
 ## v0.2.2 (2025-01-20)
 
 ## Bug fixes:

@@ -37,6 +37,11 @@ pub fn is_collection_exists(collection_name: &str) -> bool {
     }
 }
 
+pub fn update_collection(collection_name: &str, config: CollectionConfig) {
+    delete_collection(collection_name);
+    write_collection(collection_name, config);
+}
+
 pub fn get_collections() -> Vec<CollectionConfig> {
     let path = get_collections_path();
     let files = fs::read_dir(path).expect("Not a folder");

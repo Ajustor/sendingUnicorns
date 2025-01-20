@@ -88,7 +88,11 @@
     if (!collectionsStore.collection?.environments) {
       collectionsStore.collection.environments = []
     }
-    collectionsStore.collection.environments.push({ name, vars: [], id: 'nope' })
+    collectionsStore.collection.environments.push({
+      name,
+      vars: [],
+      id: name.toLocaleLowerCase().replaceAll(' ', '-')
+    })
 
     updateCollection()
   }
@@ -103,10 +107,12 @@
         description: "Merci de créer votre collection avant d'enregistrer votre requête"
       })
     }
+
     commands
       .updateCollection(collectionsStore.collection.name, collectionsStore.collection)
-      .then(() => {
+      .then(async () => {
         toast.success('Collection mise à jours')
+        collectionsStore.collections = await commands.getCollections()
       })
       .catch((error) => {
         toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {

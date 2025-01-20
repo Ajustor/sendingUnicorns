@@ -55,7 +55,7 @@
 {#snippet bodyTypeSelector()}
   <Select type="single" bind:value={bodyType}>
     <SelectTrigger class="col-span-1">
-      {selectedBodyType?.label ?? 'Select environment'}
+      {selectedBodyType?.label ?? 'Select body type'}
     </SelectTrigger>
     <SelectContent>
       <SelectGroup>
@@ -76,6 +76,36 @@
       </SelectGroup>
     </SelectContent>
   </Select>
+{/snippet}
+
+{#snippet jsonBodyConfig()}
+  <Codemirror
+    variables={localVariables}
+    language={json()}
+    isSingleLine={false}
+    bind:value={requestStore.request.options.body.json}
+    placeholder="Json body"
+  />
+{/snippet}
+
+{#snippet formDataBodyConfig()}
+  {#each requestStore.request.options.body.form_data as body, i}
+    <div class="flex items-center justify-center gap-3">
+      <Checkbox bind:checked={body[1].is_active} />
+      <Codemirror variables={localVariables} placeholder="key" bind:value={body[0]} />
+      <Codemirror
+        variables={localVariables}
+        placeholder="value"
+        bind:value={body[1].value as string}
+      />
+      <Button onclick={() => deleteBody(i)} class="gap-2" title="Delete">
+        <Trash />
+      </Button>
+    </div>
+  {/each}
+  <Button onclick={addNewBodyField} class="mt-4 gap-2">
+    Add body element <Plus />
+  </Button>
 {/snippet}
 
 <Tabs>
@@ -129,33 +159,9 @@
   <TabsContent value="body">
     {@render bodyTypeSelector()}
     {#if bodyType === BodyTypeEnum.JSON}
-      <!-- content here -->
-      <Codemirror
-        variables={localVariables}
-        language={json()}
-        isSingleLine={false}
-        bind:value={requestStore.request.options.body.json}
-        placeholder="Json body"
-      />
+      {@render jsonBodyConfig()}
     {:else if bodyType === BodyTypeEnum.FORM_DATA}
-      <!-- else content here -->
-      {#each requestStore.request.options.body.form_data as body, i}
-        <div class="flex items-center justify-center gap-3">
-          <Checkbox bind:checked={body[1].is_active} />
-          <Codemirror variables={localVariables} placeholder="key" bind:value={body[0]} />
-          <Codemirror
-            variables={localVariables}
-            placeholder="value"
-            bind:value={body[1].value as string}
-          />
-          <Button onclick={() => deleteBody(i)} class="gap-2" title="Delete">
-            <Trash />
-          </Button>
-        </div>
-      {/each}
-      <Button onclick={addNewBodyField} class="mt-4 gap-2">
-        Add body element <Plus />
-      </Button>
+      {@render formDataBodyConfig()}
     {/if}
   </TabsContent>
 </Tabs>

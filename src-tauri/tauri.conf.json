@@ -76,7 +76,7 @@
       },
       "nsis": {
         "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/sendingUnicorns.png"
+        "headerImage": "icons/sendingUnicorns.bmp"
       }
     }
   },
