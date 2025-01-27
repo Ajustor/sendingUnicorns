@@ -1,17 +1,23 @@
+## v0.2.6 (2025-01-27)
+
+## Bug fixes
+
+- Issues with file storage may be resolved
+
 ## v0.2.3 (2025-01-20)
 
 ## Enhancements
 
 - Start reworking environment system
 
-## Bug fixes:
+## Bug fixes
 
 - Fixing renderer issues
 - Use new method to update collections
 
 ## v0.2.2 (2025-01-20)
 
-## Bug fixes:
+## Bug fixes
 
 - Fixing renderer issues
 
@@ -19,18 +25,18 @@
 
 Third candidate to beta testing
 
-## Added features:
+## Added features
 
 - Collections export
 - Collection import
 - Auto updater system
 
-## Enhancements:
+## Enhancements
 
 - Migrate to tauri 2
 - Migrate to svelte 5
 
-## Bug fixes:
+## Bug fixes
 
 - Rendering issues
 
