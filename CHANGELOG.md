@@ -1,3 +1,17 @@
+## v0.2.7 (2025-01-27)
+
+## Enhancements
+
+- Add modal to manage app update
+
+## Bug fixes
+
+- Fix app restarting loop
+
+## Bug fixes
+
+- Issues with file storage may be resolved
+
 ## v0.2.6 (2025-01-27)
 
 ## Bug fixes

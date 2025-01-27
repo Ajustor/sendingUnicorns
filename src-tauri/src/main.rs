@@ -123,24 +123,41 @@ fn migrate() -> std::io::Result<()> {
 }
 
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    let confirmation_modal = app
+        .dialog()
+        .message("An update is available, do you want to download and install it ?")
+        .buttons(MessageDialogButtons::YesNo);
+    let restart_modal = app
+        .dialog()
+        .message("Install finished, do you want to restart the app ?")
+        .buttons(MessageDialogButtons::YesNo);
+
     if let Some(update) = app.updater()?.check().await? {
-        let mut downloaded = 0;
+        let yes = confirmation_modal.blocking_show();
 
-        // alternatively we could also call update.download() and update.install() separately
-        update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    println!("downloaded {downloaded} from {content_length:?}");
-                },
-                || {
-                    println!("download finished");
-                },
-            )
-            .await?;
+        if yes {
+            let mut downloaded = 0;
 
-        println!("update installed");
-        app.restart();
+            // alternatively we could also call update.download() and update.install() separately
+            update
+                .download_and_install(
+                    |chunk_length, content_length| {
+                        downloaded += chunk_length;
+                        println!("downloaded {downloaded} from {content_length:?}");
+                    },
+                    || {
+                        println!("download finished");
+                    },
+                )
+                .await?;
+
+            println!("update installed");
+
+            let yes = restart_modal.blocking_show();
+            if yes {
+                app.restart();
+            }
+        }
     }
 
     Ok(())

@@ -14,7 +14,7 @@ changelog:
     - title: Exciting New Features 🎉
       labels:
         - Semver-Minor
-        - enhancement
+        - Enhancements
         - Added features
     - title: Bugs killer 🐛
       labels:
