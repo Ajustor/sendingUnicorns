@@ -1,7 +1,7 @@
 import { Method } from '@enums/methods'
 import type { Request } from '../tauriApi'
 
-let request: Request = $state({
+let request = $state<Request>({
   name: 'New request',
   url: '',
   method: Method.GET,
@@ -12,7 +12,7 @@ let request: Request = $state({
     params: []
   },
   pre_request_script: null,
-  test: null
+  test: null,
 })
 
 export const requestStore = {
@@ -21,6 +21,7 @@ export const requestStore = {
   },
 
   set request(value: Request) {
+    console.log('set data', value)
     request = value
   }
 }

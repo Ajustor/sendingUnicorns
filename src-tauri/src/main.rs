@@ -2,7 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 extern crate dirs;
-use tauri_plugin_log::{Target, TargetKind};
 
 use std::fs;
 mod config;
@@ -188,6 +187,8 @@ fn main() {
 
     let mut ctx = tauri::generate_context!("./tauri.conf.json");
 
+    let version = ctx.package_info().version.to_string().clone();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
@@ -233,6 +234,7 @@ fn main() {
 
             let import_button = MenuItem::with_id(handle, "import", "Import", true, None::<&str>)?;
             let export_button = MenuItem::with_id(handle, "export", "Export", true, None::<&str>)?;
+            let about_button = MenuItem::with_id(handle, "about", "About", true, None::<&str>)?;
 
             let save_button =
                 MenuItem::with_id(handle, "save", "Save", true, Some("cmdOrControl+S"))?;
@@ -250,6 +252,7 @@ fn main() {
                 .copy()
                 .paste()
                 .separator()
+                .items(&[&about_button])
                 // .text("item2", "MenuItem 2")
                 // .check("checkitem2", "CheckMenuItem 2")
                 // .icon(
@@ -280,6 +283,13 @@ fn main() {
 
                 if event.id() == export_button.id() {
                     let _ = handler.emit_to(EventTarget::app(), "export", {});
+                }
+
+                if event.id() == about_button.id() {
+                    handler
+                        .dialog()
+                        .message(format!("Current version: {version}"))
+                        .show(|_yes| {});
                 }
             });
 

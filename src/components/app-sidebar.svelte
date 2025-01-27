@@ -48,9 +48,8 @@
     collectionsStore.collections = await commands.getCollections()
     toast.success('Request created')
   }
-  let selectedRequestId = $state('no-id')
 
-  $effect(() => {
+  const selectRequest = (selectedRequestId: string) => {
     for (const collection of collectionsStore.collections) {
       const request = collection.requests.find(({ id }) => id === selectedRequestId)
       if (request) {
@@ -59,7 +58,7 @@
       }
     }
     requestStore.request = defaultRequest
-  })
+  }
 </script>
 
 <Sidebar.Root>
@@ -78,7 +77,7 @@
                   onSend={(name: string, url: string, method: Method) =>
                     createNewRequest(collection, name, url, method)}
                 />
-                <RadioGroup class="p-4" bind:value={selectedRequestId}>
+                <RadioGroup class="p-4" onValueChange={selectRequest}>
                   {#each collection.requests as request}
                     <div class="flex items-center space-x-2">
                       <RadioGroupItem value={request.id} id={request.name} />

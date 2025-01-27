@@ -32,14 +32,13 @@
   import { collectionsStore } from '../stores/collections.svelte'
   import { requestStore } from '../stores/request.svelte'
 
-  let defaultEnvironment: Environment = $state({
+  let defaultEnvironment: Environment = Object.freeze({
     name: 'default',
     id: 'nope',
     vars: []
   })
 
-  let selectedEnvironmentId = $state('nope')
-  let selectedCollectionEnvironment: Environment = $derived(selectEnvironment())
+  let selectedCollectionEnvironment = $state<Environment>({ ...defaultEnvironment })
   let bodyType: BodyTypesEnum = $state(BodyTypeEnum.FORM_DATA)
   let needRedrawOfConfig = $state(false)
 
@@ -61,10 +60,12 @@
       : undefined
   )
 
-  function selectEnvironment() {
+  function selectEnvironment(selectedEnvironmentId: string) {
     if (!collectionsStore.collection || !collectionsStore.collection.environments?.length) {
-      return defaultEnvironment
+      selectedCollectionEnvironment = { ...defaultEnvironment }
+      return
     }
+
     needRedrawOfConfig = true
 
     const environment = collectionsStore.collection.environments.find(
@@ -72,12 +73,13 @@
     )
 
     if (environment) {
+      selectedCollectionEnvironment = environment
       needRedrawOfConfig = false
-      return environment
+      return
     }
-    needRedrawOfConfig = false
 
-    return defaultEnvironment
+    selectedCollectionEnvironment = { ...defaultEnvironment }
+    needRedrawOfConfig = false
   }
 
   const createNewEnvironment = async (name: string) => {
@@ -85,9 +87,8 @@
       return toast.error('Please select a collection to create a new environment')
     }
 
-    if (!collectionsStore.collection?.environments) {
-      collectionsStore.collection.environments = []
-    }
+    collectionsStore.collection.environments ??= []
+
     collectionsStore.collection.environments.push({
       name,
       vars: [],
@@ -112,7 +113,6 @@
       .updateCollection(collectionsStore.collection.name, collectionsStore.collection)
       .then(async () => {
         toast.success('Collection mise à jours')
-        collectionsStore.collections = await commands.getCollections()
       })
       .catch((error) => {
         toast.error('Une erreur es survenue lors de la mise à jours de votre collection', {
@@ -351,11 +351,7 @@
 
 {#snippet environmentSelect()}
   <span class="flex min-w-64 max-w-[50%] gap-2">
-    <Select
-      disabled={!collectionsStore.collection}
-      type="single"
-      bind:value={selectedEnvironmentId}
-    >
+    <Select disabled={!collectionsStore.collection} type="single" onValueChange={selectEnvironment}>
       <SelectTrigger class="col-span-1">
         {selectedEnvironment?.label ?? 'Select your environment'}
       </SelectTrigger>
@@ -368,6 +364,7 @@
             {/each}
             <SelectItem
               class="flex justify-between"
+              disabled
               value={defaultEnvironment.id}
               label={defaultEnvironment.name}
             >

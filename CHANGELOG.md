@@ -1,3 +1,16 @@
+## v0.2.9 (2025-01-27)
+
+## Enchancements
+
+- Add about button
+- Disable default environment
+
+## Bug Fixes
+
+- Fixing issues with front
+- Fix bug when save file
+
+
 ## v0.2.8 (2025-01-27)
 
 ## Enhancements
