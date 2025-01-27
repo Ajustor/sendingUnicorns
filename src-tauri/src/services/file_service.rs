@@ -31,7 +31,7 @@ pub fn is_collection_exists(collection_name: &str) -> bool {
     match fs::exists(path) {
         Ok(exists) => return exists,
         Err(error) => {
-            println!("An error occured {error:?}");
+            log::error!("An error occured {error:?}");
             return false;
         }
     }
@@ -83,7 +83,7 @@ pub fn read_collection(collection_name: &str) -> CollectionConfig {
         request.id = Some(Uuid::new_v4().to_string());
 
         if request.options.is_none() {
-            println!("Add default options to request ");
+            log::info!("Add default options to request ");
             request.options = Some(RequestOptions {
                 headers: Some(Vec::new()),
                 body: BodyTypes {
@@ -122,7 +122,7 @@ pub fn migrate() {
         let conf: OldCollectionConfig = match serde_json::from_str(&collection_config) {
             Ok(result) => result,
             Err(error) => {
-                println!("Cannot migrate, {:?}", error);
+                log::info!("Cannot migrate, {:?}", error);
                 return;
             }
         };
@@ -196,7 +196,7 @@ pub fn migrate() {
             }
         }
 
-        println!("We write this newConfig {:?}", new_conf);
+        log::info!("We write this newConfig {:?}", new_conf);
         let collection_path = get_collection_path(file.to_str().unwrap());
         let strigified_config = serde_json::to_string(&new_conf).expect("Error while parsing json");
         let _ = fs::write(collection_path, strigified_config);

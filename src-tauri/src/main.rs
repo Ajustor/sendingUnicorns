@@ -2,10 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 extern crate dirs;
+use tauri_plugin_log::{Target, TargetKind};
+
 use std::fs;
 mod config;
 mod services;
-use tauri::path::{BaseDirectory, PathResolver};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 
 use services::structs::{BodyTypesEnum, RequestParams};
@@ -143,15 +144,15 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
                 .download_and_install(
                     |chunk_length, content_length| {
                         downloaded += chunk_length;
-                        println!("downloaded {downloaded} from {content_length:?}");
+                        log::info!("downloaded {downloaded} from {content_length:?}");
                     },
                     || {
-                        println!("download finished");
+                        log::info!("download finished");
                     },
                 )
                 .await?;
 
-            println!("update installed");
+            log::info!("update installed");
 
             let yes = restart_modal.blocking_show();
             if yes {
@@ -164,8 +165,10 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
 }
 
 fn main() {
+    log::info!("Init application");
     let config_creation = init();
     if config_creation.is_err() {
+        log::error!("An error occured when init application");
         return;
     }
 
@@ -186,8 +189,16 @@ fn main() {
     let mut ctx = tauri::generate_context!("./tauri.conf.json");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .target(tauri_plugin_log::TargetKind::LogDir {
+                    file_name: Some("logs".to_string()),
+                })
+                .build(),
+        )
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_http::init())

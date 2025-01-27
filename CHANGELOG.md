@@ -1,3 +1,9 @@
+## v0.2.8 (2025-01-27)
+
+## Enhancements
+
+- Add logs to app
+
 ## v0.2.7 (2025-01-27)
 
 ## Enhancements

@@ -98,11 +98,11 @@ fn add_body_to_request(
     body: Option<BodyTypes>,
     body_type: BodyTypesEnum,
 ) -> RequestBuilder {
-    println!("Sending request with body {:?}", body);
+    log::info!("Sending request with body {:?}", body);
 
     match body {
         None => {
-            println!("Sending request with not body {:?}", body);
+            log::info!("Sending request with not body {:?}", body);
             return request_builder;
         }
         Some(existing_body) => {
@@ -125,7 +125,7 @@ fn add_body_to_request(
 
                     match parsed_body {
                         JsonParseType::Json(body) => {
-                            println!("Sending request with body parsed as {:?}", body);
+                            log::info!("Sending request with body parsed as {:?}", body);
 
                             if body.keys().len() != 0 {
                                 return request_builder.json(&body);
