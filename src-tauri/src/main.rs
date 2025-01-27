@@ -1,15 +1,18 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+extern crate dirs;
 use std::fs;
 mod config;
 mod services;
+use tauri::path::{BaseDirectory, PathResolver};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 
 use services::structs::{BodyTypesEnum, RequestParams};
 use specta_typescript::Typescript;
 use tauri::menu::{IconMenuItem, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, EventTarget};
+use tauri_plugin_fs::FsExt;
 use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::{collect_commands, Builder};
 
@@ -176,6 +179,9 @@ fn main() {
         .setup(move |app| {
             let cloned_handler = app.handle().clone();
             let handle = app.handle();
+
+            let scope = app.fs_scope();
+            let _ = scope.allow_directory(home::get(), true);
 
             tauri::async_runtime::spawn(async move {
                 update(cloned_handler).await.unwrap();

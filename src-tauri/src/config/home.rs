@@ -1,6 +1,7 @@
-use home::home_dir;
-
 pub fn get() -> String {
-    let home = home_dir().unwrap().display().to_string();
-    format!("{home}/.sending_unicorns")
+    if let Some(home) = dirs::data_dir().unwrap().to_str() {
+        return format!("{home}/.sending_unicorns");
+    } else {
+        return "".to_string();
+    }
 }
