@@ -132,30 +132,42 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
         .message("Install finished, do you want to restart the app ?")
         .buttons(MessageDialogButtons::YesNo);
 
-    if let Some(update) = app.updater()?.check().await? {
-        let yes = confirmation_modal.blocking_show();
+    match app.updater()?.check().await {
+        Err(error) => {
+            log::error!("An error occured while check update {error}")
+        }
+        Ok(update) => {
+            if let Some(update) = update {
+                let yes = confirmation_modal.blocking_show();
 
-        if yes {
-            let mut downloaded = 0;
+                if yes {
+                    let mut downloaded = 0;
 
-            // alternatively we could also call update.download() and update.install() separately
-            update
-                .download_and_install(
-                    |chunk_length, content_length| {
-                        downloaded += chunk_length;
-                        log::info!("downloaded {downloaded} from {content_length:?}");
-                    },
-                    || {
-                        log::info!("download finished");
-                    },
-                )
-                .await?;
+                    match update
+                        .download_and_install(
+                            |chunk_length, content_length| {
+                                downloaded += chunk_length;
+                                log::info!("downloaded {downloaded} from {content_length:?}");
+                            },
+                            || {
+                                log::info!("download finished");
+                            },
+                        )
+                        .await
+                    {
+                        Err(error) => {
+                            log::error!("An error occured while download/install {error}")
+                        }
+                        Ok(_result) => {
+                            log::info!("update installed");
 
-            log::info!("update installed");
-
-            let yes = restart_modal.blocking_show();
-            if yes {
-                app.restart();
+                            let restart_app = restart_modal.blocking_show();
+                            if restart_app {
+                                app.restart();
+                            }
+                        }
+                    }
+                }
             }
         }
     }

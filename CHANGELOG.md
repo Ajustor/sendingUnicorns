@@ -1,3 +1,9 @@
+## v0.2.10 (2025-01-28)
+
+## Bug Fixes
+
+- Fixing crash when updater cannot check status
+
 ## v0.2.9 (2025-01-27)
 
 ## Enchancements
