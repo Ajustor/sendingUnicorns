@@ -1,3 +1,9 @@
+## v0.2.11 (2025-01-29)
+
+## Bug Fixes
+
+- Fixing issue with debug config
+
 ## v0.2.10 (2025-01-28)
 
 ## Bug Fixes
