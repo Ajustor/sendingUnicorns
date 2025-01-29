@@ -8,7 +8,7 @@
     keymap,
     lineNumbers
   } from '@codemirror/view'
-  import { LanguageSupport } from '@codemirror/language'
+  import { LanguageSupport, foldService } from '@codemirror/language'
   import { defineCodeMirrorCompletion, defineCodeMirrorLanguage, defineHover } from './extensions'
   import { mode } from 'mode-watcher'
   import { markdown } from '@codemirror/lang-markdown'
@@ -22,6 +22,7 @@
     onCtrlS?: () => boolean
     isSingleLine?: boolean
     language?: LanguageSupport
+    maxHeight?: string
   } & EditorViewConfig
 
   let {
@@ -33,6 +34,7 @@
     onCtrlS = () => true,
     isSingleLine = true,
     language = markdown(),
+    maxHeight,
     ...options
   }: Props = $props()
 
@@ -55,10 +57,8 @@
         },
         '&': {
           width: '100%',
-          'padding-left': '0.75rem',
-          'padding-right': '0.75rem',
-          'padding-top': '0.5rem',
-          'padding-bottom': '0.5rem',
+          height: '100%',
+          ...(maxHeight && { 'max-height': maxHeight }),
           'font-size': '0.875rem' /* 14px */,
           'line-height': '1.25rem' /* 20px */
         },
@@ -67,7 +67,7 @@
         },
         '.cm-tooltip': {
           'border-radius': '0.5rem',
-          'background-color': 'unset'
+          'background-color': $mode === 'light' ? 'black' : 'white'
         }
       })
     ]
@@ -166,7 +166,8 @@
 <style>
   .code-editor,
   .cm-scroller {
-    @apply flex w-full rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    /* @apply h-full w-full rounded-md border border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50; */
+    @apply flex h-full w-full overflow-auto rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .cm-editor.valid {
@@ -175,5 +176,15 @@
 
   .invalid {
     color: red;
+  }
+
+  .root-wrapper {
+    display: flex;
+    flex-direction: row;
+
+    .cm-editor {
+      width: 0;
+      flex-grow: 1;
+    }
   }
 </style>

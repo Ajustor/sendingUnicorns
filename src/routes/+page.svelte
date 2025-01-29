@@ -424,7 +424,7 @@
     </Button>
   </div>
 
-  <Tabs class="h-dvh w-full">
+  <Tabs value="combo" class="h-[100vh] w-full">
     <TabsList>
       <TabsTrigger value="config">Configuration</TabsTrigger>
       <TabsTrigger value="combo">Split view</TabsTrigger>
@@ -433,10 +433,10 @@
     <TabsContent value="config">
       {@render configView()}
     </TabsContent>
-    <TabsContent value="combo">
-      <ResizablePaneGroup direction="horizontal" class="max-w">
+    <TabsContent value="combo" class="h-4/5">
+      <ResizablePaneGroup direction="horizontal" class="w-full h-full overflow-hidden">
         <ResizablePane defaultSize={30}>{@render configView()}</ResizablePane>
-        <ResizableHandle withHandle />
+        <ResizableHandle withHandle class="h-full" />
         <ResizablePane defaultSize={70}>
           <div class="p-2">
             {@render resultView()}

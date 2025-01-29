@@ -9,17 +9,18 @@
   let { result }: Props = $props()
 </script>
 
-<Tabs class="h-dvh w-full">
+<Tabs value="raw" class="w-full overflow-hidden flex flex-col">
   <TabsList>
     <TabsTrigger value="raw">Result</TabsTrigger>
     <TabsTrigger value="preview">Preview</TabsTrigger>
   </TabsList>
-  <TabsContent value="raw" class="h-3/4 overflow-scroll">
+  <TabsContent value="raw" class="w-full flex-grow">
     <Codemirror
-      class="col-span-3"
+      class="col-span-3 max-h-[73vh] h-full overflow-auto"
       placeholder="result"
       isSingleLine={false}
       variables={[]}
+      maxHeight="100%"
       bind:value={result}
     />
   </TabsContent>
