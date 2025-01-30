@@ -433,14 +433,12 @@
     <TabsContent value="config">
       {@render configView()}
     </TabsContent>
-    <TabsContent value="combo" class="h-4/5">
+    <TabsContent value="combo" class="h-full">
       <ResizablePaneGroup direction="horizontal" class="w-full h-full overflow-hidden">
         <ResizablePane defaultSize={30}>{@render configView()}</ResizablePane>
         <ResizableHandle withHandle class="h-full" />
         <ResizablePane defaultSize={70}>
-          <div class="p-2">
-            {@render resultView()}
-          </div>
+          {@render resultView()}
         </ResizablePane>
       </ResizablePaneGroup>
     </TabsContent>
@@ -455,5 +453,6 @@
     display: flex;
     flex-direction: column;
     @apply w-full overflow-hidden p-4;
+    height: calc(100vh - 44px);
   }
 </style>

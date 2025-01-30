@@ -57,7 +57,6 @@
         },
         '&': {
           width: '100%',
-          height: '100%',
           ...(maxHeight && { 'max-height': maxHeight }),
           'font-size': '0.875rem' /* 14px */,
           'line-height': '1.25rem' /* 20px */
