@@ -1,0 +1,284 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  verify-version:
+    name: Verify tag matches Cargo.toml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The in-app updater compares the release tag with CARGO_PKG_VERSION; a
+      # mismatch would make every client re-offer the update forever.
+      - name: Compare versions
+        run: |
+          cargo_version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$cargo_version" != "$tag_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Cargo.toml version $cargo_version"
+            exit 1
+          fi
+
+      - name: Check CHANGELOG.md entry
+        if: ${{ !contains(github.ref_name, '-') }}
+        run: |
+          if ! python3 scripts/changelog.py CHANGELOG.md "$GITHUB_REF_NAME" > /dev/null; then
+            echo "::error::CHANGELOG.md has no '## [${GITHUB_REF_NAME#v}]' section"
+            exit 1
+          fi
+
+  build:
+    name: Build ${{ matrix.artifact }}
+    needs: verify-version
+    runs-on: ${{ matrix.os }}
+    # Tests, release build and packaging: about 15 minutes.
+    timeout-minutes: 60
+    env:
+      # Authenticode signing is opt-in: it runs only when both secrets are set.
+      HAS_CERT: ${{ secrets.WINDOWS_CERT_PFX_BASE64 != '' && secrets.WINDOWS_CERT_PASSWORD != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: sendingUnicorns-linux-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: sendingUnicorns-macos-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: sendingUnicorns-windows-x64.exe
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.target }}
+
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev \
+            libxkbcommon-x11-dev libwayland-dev desktop-file-utils
+
+      - name: Test
+        run: cargo test --workspace --target ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # The binary must start on a bare system: no Homebrew library on macOS,
+      # no OpenSSL from the build machine on Linux.
+      - name: Check linked libraries
+        if: matrix.os != 'windows-latest'
+        run: bash scripts/check-linked-libs.sh target/${{ matrix.target }}/release/sendingUnicorns
+
+      - name: Prepare code signing (Windows)
+        if: matrix.os == 'windows-latest' && env.HAS_CERT == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX_BASE64))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw 'signtool.exe not found' }
+          "CODESIGN_PFX=$pfx" >> $env:GITHUB_ENV
+          "SIGNTOOL=$($signtool.FullName)" >> $env:GITHUB_ENV
+
+      - name: Sign binary (Windows)
+        if: matrix.os == 'windows-latest' && env.HAS_CERT == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $exe = "target\${{ matrix.target }}\release\sendingUnicorns.exe"
+          & $env:SIGNTOOL sign /f $env:CODESIGN_PFX /p $env:WINDOWS_CERT_PASSWORD `
+            /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "sendingUnicorns" $exe
+          if ($LASTEXITCODE -ne 0) { throw "signtool sign failed" }
+
+      - name: Rename binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: cp target/${{ matrix.target }}/release/sendingUnicorns ${{ matrix.artifact }}
+
+      - name: Rename binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cp target/${{ matrix.target }}/release/sendingUnicorns.exe ${{ matrix.artifact }}
+
+      # Linux / macOS packages. The bare binaries above stay published: the
+      # install scripts and the copies installed from them update from them.
+      - name: Build AppImage (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: bash scripts/build-appimage.sh target/${{ matrix.target }}/release/sendingUnicorns sendingUnicorns-linux-x64.AppImage
+
+      - name: Build app and disk image (macOS)
+        if: matrix.os == 'macos-latest'
+        run: bash scripts/build-macos-app.sh target/${{ matrix.target }}/release/sendingUnicorns sendingUnicorns-macos-arm64.dmg
+
+      # Run the Terminal installer (scripts/install-macos.sh) against this
+      # build: a local latest.json served over file:// stands in for the site.
+      - name: Test the install script (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -euo pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site"
+          cp sendingUnicorns-macos-arm64.dmg "$site/"
+          sha=$(shasum -a 256 "$site/sendingUnicorns-macos-arm64.dmg" | cut -d' ' -f1)
+          jq -n --arg url "file://$site/sendingUnicorns-macos-arm64.dmg" --arg sha "$sha" \
+            '{version: "test", assets: [{name: "sendingUnicorns-macos-arm64.dmg", url: $url, sha256: $sha}]}' \
+            > "$site/latest.json"
+          export SENDINGUNICORNS_BASE_URL="file://$site" SENDINGUNICORNS_APP_DIR="$RUNNER_TEMP/Apps"
+          bash scripts/install-macos.sh
+          app="$SENDINGUNICORNS_APP_DIR/sendingUnicorns.app"
+          codesign --verify --deep --strict "$app"
+          for dir in /usr/local/bin "$HOME/.local/bin"; do
+            if [ -L "$dir/sendingUnicorns" ]; then link="$dir/sendingUnicorns"; break; fi
+          done
+          test "$(readlink "$link")" = "$app/Contents/MacOS/sendingUnicorns"
+          # Running it again updates in place.
+          bash scripts/install-macos.sh
+
+      - name: Build Windows installer (MSI)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path target\release | Out-Null
+          Copy-Item target\${{ matrix.target }}\release\sendingUnicorns.exe target\release\sendingUnicorns.exe -Force
+          $wixDir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset*" | Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $wixDir) {
+            choco install wixtoolset --no-progress -y
+            $wixDir = Get-ChildItem "C:\Program Files (x86)\WiX Toolset*" | Sort-Object Name -Descending | Select-Object -First 1
+          }
+          $candle = Join-Path $wixDir.FullName "bin\candle.exe"
+          $light  = Join-Path $wixDir.FullName "bin\light.exe"
+          # MSI versions are x.y.z only.
+          $version = "${{ github.ref_name }}".TrimStart('v').Split('-')[0]
+          & $candle -arch x64 "-dProductVersion=$version" -out wix\main.wixobj wix\main.wxs
+          if ($LASTEXITCODE -ne 0) { throw "candle failed" }
+          & $light -ext WixUIExtension -out sendingUnicorns-setup.msi wix\main.wixobj
+          if ($LASTEXITCODE -ne 0) { throw "light failed" }
+
+      - name: Sign installer (Windows)
+        if: matrix.os == 'windows-latest' && env.HAS_CERT == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          & $env:SIGNTOOL sign /f $env:CODESIGN_PFX /p $env:WINDOWS_CERT_PASSWORD `
+            /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "sendingUnicorns Installer" sendingUnicorns-setup.msi
+          if ($LASTEXITCODE -ne 0) { throw "signtool sign failed" }
+
+      - name: Remove signing certificate (Windows)
+        if: always() && matrix.os == 'windows-latest' && env.HAS_CERT == 'true'
+        shell: pwsh
+        run: if ($env:CODESIGN_PFX -and (Test-Path $env:CODESIGN_PFX)) { Remove-Item $env:CODESIGN_PFX -Force }
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v5
+        with:
+          name: sendingUnicorns-linux-x64-appimage
+          path: sendingUnicorns-linux-x64.AppImage
+
+      - if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v5
+        with:
+          name: sendingUnicorns-macos-arm64-dmg
+          path: sendingUnicorns-macos-arm64.dmg
+
+      - if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v5
+        with:
+          name: sendingUnicorns-setup-msi
+          path: sendingUnicorns-setup.msi
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          path: artifacts/
+      - name: Release notes
+        id: notes
+        run: |
+          if python3 scripts/changelog.py CHANGELOG.md "$GITHUB_REF_NAME" > release-notes.md; then
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+          else
+            : > release-notes.md
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: sendingUnicorns ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: release-notes.md
+          files: artifacts/**/*
+          generate_release_notes: ${{ steps.notes.outputs.generate }}
+
+  # Binaries + latest.json + install scripts on GitHub Pages: what the in-app
+  # updater (crates/updater) and scripts/install.* read. Each deploy
+  # replaces the whole site, so only the latest stable release is hosted.
+  pages:
+    name: Publish to GitHub Pages
+    needs: release
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          path: artifacts/
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Build site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: bash scripts/build-site.sh "$GITHUB_REF_NAME" "$BASE_URL" artifacts
+      # One artifact name per attempt: a re-run would otherwise find the
+      # previous attempt's "github-pages" too, and deploy-pages refuses two.
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+          name: github-pages-${{ github.run_attempt }}
+      - id: deploy
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
+

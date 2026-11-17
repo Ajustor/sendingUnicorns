@@ -1,0 +1,26 @@
+# cargo-deny (R-RS-05): `cargo deny check advisories bans sources`, run by CI.
+
+# The platforms we ship: eframe's wasm-only dependencies (tokio through
+# wasm-bindgen-futures) are never built.
+[graph]
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+]
+
+[advisories]
+version = 2
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+# Lightness: no OpenSSL (TLS is rustls) and no async runtime.
+deny = [
+  { crate = "openssl-sys" },
+  { crate = "tokio" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

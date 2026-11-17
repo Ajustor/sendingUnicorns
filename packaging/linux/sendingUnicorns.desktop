@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=sendingUnicorns
+GenericName=HTTP Client
+Comment=Light and fast HTTP client
+Exec=sendingUnicorns
+Icon=sendingUnicorns
+Terminal=false
+Categories=Development;Network;
+StartupWMClass=sendingUnicorns
