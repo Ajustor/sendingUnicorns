@@ -4,11 +4,11 @@ Toutes les évolutions notables de sendingUnicorns. Format :
 [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 [SemVer](https://semver.org/lang/fr/).
 
-## [Unreleased]
+## [0.3.0] - 2026-11-17
 
 Réécriture complète, avec les méthodes des autres logiciels de la suite
-Unicorns : une application Rust native (egui), sans Tauri, sans WebView et
-sans Node.
+Unicorns : une application Rust native (egui), sans Tauri ni Node, sans
+moteur web embarqué (la preview utilise la WebView du système).
 
 ### Ajouté
 
