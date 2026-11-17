@@ -8,6 +8,7 @@ mod command;
 mod dialogs;
 mod editor;
 mod highlight;
+mod preview;
 mod response;
 mod runner;
 mod sender;
@@ -21,6 +22,7 @@ mod updates;
 mod window_frame;
 
 pub use app::{ExitSlot, SendingApp, UseCases};
+pub use preview::Preview;
 pub use updates::Updates;
 
 pub const APP_NAME: &str = "Sending Unicorns";

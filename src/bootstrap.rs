@@ -21,7 +21,7 @@ use infrastructure::{
 };
 use updater::{UpdateMemory, Updater};
 
-use crate::ui::{ExitSlot, SendingApp, Updates, UseCases};
+use crate::ui::{ExitSlot, Preview, SendingApp, Updates, UseCases};
 
 pub fn build(cc: &eframe::CreationContext<'_>, exit_slot: ExitSlot) -> anyhow::Result<SendingApp> {
     crate::ui::theme::install(&cc.egui_ctx);
@@ -92,6 +92,7 @@ pub fn build(cc: &eframe::CreationContext<'_>, exit_slot: ExitSlot) -> anyhow::R
         use_cases,
         updates,
         exit_slot,
+        Preview::new(cc),
         warnings,
     ))
 }

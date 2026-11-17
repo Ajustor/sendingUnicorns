@@ -31,7 +31,9 @@ tempfile = "3"
 
 # Team rules R-RS-03. Inherited by every crate of ours with `[lints] workspace = true`.
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# `deny`, not `forbid`: the preview's window handle needs one justified
+# `#[allow]` (R-RS-03, R-RS-22).
+unsafe_code = "deny"
 missing_debug_implementations = "warn"
 unused_must_use = "deny"
 
@@ -65,6 +67,14 @@ env_logger = { version = "0.11", default-features = false, features = ["auto-col
 anyhow = "1"
 # The system's file pickers (import, export, save a response).
 rfd = "0.18"
+# The response preview: the OS web view (WebView2, WKWebView, WebKitGTK), as
+# in browsingUnicorns. No engine to ship.
+wry = "0.57"
+raw-window-handle = "0.6"
+
+# A child web view on Linux needs GTK initialised and its loop advanced.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
 
 [build-dependencies]
 # Embeds assets/icon.ico in the Windows executable (see build.rs).

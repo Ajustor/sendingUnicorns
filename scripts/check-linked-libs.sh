@@ -3,9 +3,11 @@
 #
 # macOS: only system libraries (/usr/lib, /System) are allowed; anything else
 # (e.g. Homebrew's /opt/homebrew/opt/openssl@3) is missing on a bare system.
-# Linux: OpenSSL must not be linked directly (its soname differs between
-# distributions); TLS is rustls, built in. Only the binary's own NEEDED
-# entries are checked.
+# WebKit is a system framework (the response preview).
+# Linux: the preview's web view comes from the system (WebKitGTK, GTK), so
+# those are expected; OpenSSL must not be linked directly (its soname differs
+# between distributions); TLS is rustls, built in. Only the binary's own
+# NEEDED entries are checked: ldd would also list what WebKitGTK pulls in.
 #
 # Usage: scripts/check-linked-libs.sh <binary>
 set -euo pipefail

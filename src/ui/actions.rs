@@ -228,6 +228,7 @@ impl SendingApp {
             }
             Err(e) => {
                 let exchange = Exchange::new(
+                    String::new(),
                     Err(e.to_string()),
                     std::collections::BTreeSet::new(),
                     domain::AfterResponse::default(),

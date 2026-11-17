@@ -52,6 +52,10 @@ sans Node.
   la réponse ; onglet Cookies.
 - Cookies gardés entre les requêtes (désactivable) ; proxy réglable.
 - Documentation par requête et par collection (onglet Docs).
+- Onglet Preview de la réponse : pages HTML (avec leurs ressources relatives),
+  images, SVG et PDF rendus par la WebView du système (WebView2, WKWebView,
+  WebKitGTK), comme dans browsingUnicorns ; les images et PDF s'y ouvrent
+  directement.
 - Réglages : délai d'expiration, suivi des redirections, vérification des
   certificats (désactivable pour les serveurs locaux).
 - Mises à jour intégrées, comme dans les autres logiciels de la suite :
@@ -69,11 +73,6 @@ sans Node.
 - Les certificats du système sont utilisés, et le proxy des variables
   `HTTP_PROXY` / `HTTPS_PROXY`.
 - Les certificats sont vérifiés par défaut (ils ne l'étaient jamais).
-
-### Retiré
-
-- L'aperçu HTML de la réponse (il demandait une WebView) : enregistrez le
-  corps pour l'ouvrir dans un navigateur.
 
 ## [0.2.11] - 2025-01-29
 

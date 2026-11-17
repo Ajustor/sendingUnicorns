@@ -2,6 +2,7 @@
 //! headers, cookies and the assertions' results.
 
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use domain::{AfterResponse, ContentKind, Response, pretty_json};
@@ -10,6 +11,7 @@ use egui_phosphor::regular as icon;
 
 use super::command::Command;
 use super::highlight::{matches, response_layouter};
+use super::preview::{Preview, previewable};
 use super::theme;
 
 /// Bodies longer than this are cut on screen (saving keeps them whole).
@@ -18,6 +20,10 @@ const DISPLAY_LIMIT: usize = 2 * 1024 * 1024;
 /// What came back for one send, with its body ready to show.
 #[derive(Debug)]
 pub struct Exchange {
+    /// Tells this exchange from the next one of the same request.
+    pub key: u64,
+    /// Where it was sent (relative links of an HTML preview).
+    pub url: String,
     pub result: Result<Response, String>,
     pub missing_variables: BTreeSet<String>,
     pub after: AfterResponse,
@@ -29,10 +35,12 @@ pub struct Exchange {
 
 impl Exchange {
     pub fn new(
+        url: String,
         result: Result<Response, String>,
         missing_variables: BTreeSet<String>,
         after: AfterResponse,
     ) -> Self {
+        static NEXT: AtomicU64 = AtomicU64::new(1);
         let (raw, pretty, truncated) = match &result {
             Ok(response) => {
                 let kind = response.content_kind();
@@ -59,6 +67,8 @@ impl Exchange {
             Err(_) => (String::new(), None, false),
         };
         Self {
+            key: NEXT.fetch_add(1, Ordering::Relaxed),
+            url,
             result,
             missing_variables,
             after,
@@ -73,6 +83,7 @@ impl Exchange {
 enum Tab {
     #[default]
     Body,
+    Preview,
     Headers,
     Cookies,
     Tests,
@@ -101,6 +112,7 @@ impl ResponseView {
         ui: &mut Ui,
         exchange: Option<&Exchange>,
         sending: Option<Duration>,
+        preview: &mut Preview,
         commands: &mut Vec<Command>,
     ) {
         if let Some(elapsed) = sending {
@@ -148,11 +160,28 @@ impl ResponseView {
                 return;
             }
         };
+        let can_preview = previewable(response).is_some();
+        // Binary bodies (images, PDF) have nothing to read: their preview.
+        self.tab = match self.tab {
+            Tab::Body if can_preview && response.content_kind() == ContentKind::Binary => {
+                Tab::Preview
+            }
+            Tab::Preview if !can_preview => Tab::Body,
+            tab => tab,
+        };
         self.summary(ui, response, &exchange.after, commands);
         ui.add_space(2.0);
         ui.separator();
         match self.tab {
             Tab::Body => self.body(ui, exchange),
+            Tab::Preview => {
+                let rect = ui.available_rect_before_wrap();
+                ui.allocate_rect(rect, egui::Sense::hover());
+                preview.show(ui.ctx(), rect, exchange.key, &exchange.url, response);
+                if let Some(error) = &preview.error {
+                    ui.label(RichText::new(error).color(theme::error(ui)));
+                }
+            }
             Tab::Headers => headers(ui, response),
             Tab::Cookies => cookies(ui, response),
             Tab::Tests => tests(ui, &exchange.after),
@@ -205,8 +234,13 @@ impl ResponseView {
             } else {
                 format!("Tests {}/{}", after.passed(), after.results.len())
             };
+            let preview = previewable(response).is_some();
             let tabs = [
                 (Tab::Body, "Body".to_owned()),
+                (
+                    Tab::Preview,
+                    format!("{} Preview", egui_phosphor::regular::EYE),
+                ),
                 (Tab::Headers, format!("Headers {}", response.headers.len())),
                 (
                     Tab::Cookies,
@@ -219,6 +253,9 @@ impl ResponseView {
                 (Tab::Tests, tests),
             ];
             for (tab, label) in tabs {
+                if tab == Tab::Preview && !preview {
+                    continue;
+                }
                 let label = if tab == Tab::Tests && after.failed() > 0 {
                     format!("{label} {}", icon::X_CIRCLE)
                 } else {
@@ -448,7 +485,12 @@ mod tests {
     }
 
     fn exchange(r: Response) -> Exchange {
-        Exchange::new(Ok(r), BTreeSet::new(), AfterResponse::default())
+        Exchange::new(
+            String::new(),
+            Ok(r),
+            BTreeSet::new(),
+            AfterResponse::default(),
+        )
     }
 
     #[test]

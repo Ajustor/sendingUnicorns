@@ -24,6 +24,7 @@ use updater::ExitAction;
 use super::command::Command;
 use super::dialogs::{CodeWindow, Dialog, EnvironmentsWindow, ItemSettingsWindow, SettingsWindow};
 use super::editor::{Editor, Inheritance};
+use super::preview::Preview;
 use super::response::{Exchange, ResponseView};
 use super::runner::RunnerWindow;
 use super::sender::Sender;
@@ -81,6 +82,7 @@ pub struct SendingApp {
     pub(super) notice: Option<Notice>,
     pub(super) updates: Updates,
     exit_slot: ExitSlot,
+    preview: Preview,
     /// Unsaved changes were dealt with: the next close request closes.
     pub(super) may_close: bool,
     logo: Option<TextureHandle>,
@@ -111,6 +113,7 @@ impl SendingApp {
         use_cases: UseCases,
         mut updates: Updates,
         exit_slot: ExitSlot,
+        preview: Preview,
         warnings: Vec<String>,
     ) -> Self {
         updates.check_if_due();
@@ -145,6 +148,7 @@ impl SendingApp {
                 .map(|text| Notice { error: true, text }),
             updates,
             exit_slot,
+            preview,
             may_close: false,
             logo: logo(ctx),
         }
@@ -315,8 +319,13 @@ impl SendingApp {
                         ..Margin::ZERO
                     }))
                     .show_inside(ui, |ui| {
-                        self.response
-                            .show(ui, self.exchanges.get(&id), sending, commands);
+                        self.response.show(
+                            ui,
+                            self.exchanges.get(&id),
+                            sending,
+                            &mut self.preview,
+                            commands,
+                        );
                     });
                 CentralPanel::default()
                     .frame(Frame::NONE)
@@ -424,6 +433,7 @@ impl SendingApp {
             }
         }
         let exchange = Exchange::new(
+            prepared.url,
             result.map_err(|e| e.to_string()),
             prepared.missing_variables,
             after,
@@ -457,6 +467,7 @@ fn logo(ctx: &egui::Context) -> Option<TextureHandle> {
 
 impl eframe::App for SendingApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.preview.begin_frame(ctx);
         window_frame::resize_edges(ctx);
         self.guard_close(ctx);
         self.receive();
@@ -504,6 +515,15 @@ impl eframe::App for SendingApp {
         for command in commands {
             self.run(ctx, command);
         }
+        // A native view covers egui: hidden under windows, dialogs, menus.
+        let covered = self.dialog.is_some()
+            || self.environments.is_some()
+            || self.item_settings.is_some()
+            || self.settings_window.is_some()
+            || self.code.is_some()
+            || self.runner.is_some()
+            || ctx.memory(egui::Memory::any_popup_open);
+        self.preview.end_frame(covered);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
