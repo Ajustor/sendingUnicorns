@@ -1,0 +1,90 @@
+[package]
+name = "sending-unicorns"
+version = "0.3.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+# An app, not a library: never on crates.io.
+publish = false
+description = "A light and fast HTTP client written in Rust"
+
+[[bin]]
+name = "sendingUnicorns"
+path = "src/main.rs"
+
+[workspace]
+members = ["crates/domain", "crates/application", "crates/infrastructure", "crates/updater"]
+
+[workspace.package]
+edition = "2024"
+# let-chains
+rust-version = "1.89"
+license = "MIT"
+
+[workspace.dependencies]
+domain = { path = "crates/domain" }
+application = { path = "crates/application" }
+infrastructure = { path = "crates/infrastructure" }
+updater = { path = "crates/updater" }
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+
+# Team rules R-RS-03. Inherited by every crate of ours with `[lints] workspace = true`.
+[workspace.lints.rust]
+# `deny`, not `forbid`: the preview's window handle needs one justified
+# `#[allow]` (R-RS-03, R-RS-22).
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "warn"
+dbg_macro = "deny"
+todo = "deny"
+print_stdout = "warn"
+# R-VER-10: `pub` items of the inner crates are used by the outer ones only;
+# a `#[must_use]` on every getter adds noise and catches nothing here.
+must_use_candidate = "allow"
+# `domain::request::RequestId` reads better than `domain::request::Id` at the call site.
+module_name_repetitions = "allow"
+
+[lints]
+workspace = true
+
+[dependencies]
+domain.workspace = true
+application.workspace = true
+infrastructure.workspace = true
+updater.workspace = true
+log.workspace = true
+eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"] }
+egui = "0.31"
+egui-phosphor = "0.9"
+env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }
+anyhow = "1"
+# The system's file pickers (import, export, save a response).
+rfd = "0.18"
+# The response preview: the OS web view (WebView2, WKWebView, WebKitGTK), as
+# in browsingUnicorns. No engine to ship.
+wry = "0.57"
+raw-window-handle = "0.6"
+
+# A child web view on Linux needs GTK initialised and its loop advanced.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+
+[build-dependencies]
+# Embeds assets/icon.ico in the Windows executable (see build.rs).
+winresource = "0.1"
+
+[profile.release]
+# R-RS-08: a desktop app downloaded by users, so size first.
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

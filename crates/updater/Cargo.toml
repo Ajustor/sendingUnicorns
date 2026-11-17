@@ -1,0 +1,24 @@
+[package]
+name = "updater"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+# An app, not a library: never on crates.io.
+publish = false
+description = "Self-update from the release manifest published on GitHub Pages (shared with storingUnicorns and browsingUnicorns)."
+
+[dependencies]
+# `platform-verifier`: trust the system's certificates, so HTTPS works behind
+# a corporate proxy or an antivirus whose root only the OS store knows.
+ureq = { version = "3", features = ["platform-verifier"] }
+semver = "1"
+sha2 = "0.10"
+self-replace = "1"
+tempfile = "3"
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+
+# Shared with browsingUnicorns and storingUnicorns, kept identical to them: it
+# does not take this workspace's stricter lints (R-VER-10).

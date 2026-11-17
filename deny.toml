@@ -1,0 +1,39 @@
+# cargo-deny (R-RS-05): `cargo deny check advisories bans sources`, run by CI.
+
+# The platforms we ship: eframe's wasm-only dependencies (tokio through
+# wasm-bindgen-futures) are never built.
+[graph]
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+]
+
+[advisories]
+version = 2
+# Unmaintained crates are reported for our direct dependencies only: the
+# deep ones (egui's, GTK's, rfd's) are theirs to replace.
+unmaintained = "workspace"
+ignore = [
+  # quick-xml 0.30, held there by zbus_xml, under egui's Linux accessibility
+  # bridge (accesskit → atspi → zbus): it only reads the D-Bus introspection
+  # XML of the local session bus, never anything from the network. To drop
+  # once zbus moves to quick-xml >= 0.41.
+  { id = "RUSTSEC-2026-0194", reason = "quick-xml via zbus_xml: local D-Bus introspection XML only" },
+  { id = "RUSTSEC-2026-0195", reason = "quick-xml via zbus_xml: local D-Bus introspection XML only" },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+# Our own crates are referred to by path (`publish = false`).
+allow-wildcard-paths = true
+# Lightness: no OpenSSL (TLS is rustls) and no async runtime.
+deny = [
+  { crate = "openssl-sys" },
+  { crate = "tokio" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

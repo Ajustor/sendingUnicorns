@@ -1,0 +1,15 @@
+[package]
+name = "application"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+# An app, not a library: never on crates.io.
+publish = false
+description = "HTTP client use cases and the ports the infrastructure implements."
+
+[lints]
+workspace = true
+
+[dependencies]
+domain.workspace = true

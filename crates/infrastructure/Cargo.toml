@@ -1,0 +1,29 @@
+[package]
+name = "infrastructure"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+# An app, not a library: never on crates.io.
+publish = false
+description = "Adapters for the application ports: collection files, the HTTP client, settings."
+
+[lints]
+workspace = true
+
+[dependencies]
+domain.workspace = true
+application.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+log.workspace = true
+dirs = "6"
+# The HTTP client: blocking, no async runtime to ship. `platform-verifier`:
+# the system's certificates, so HTTPS works behind a corporate proxy. Same
+# client as the updater: nothing new is compiled.
+ureq = { version = "3", features = ["platform-verifier", "cookies"] }
+# Already in ureq's tree.
+percent-encoding = "2"
+
+[dev-dependencies]
+tempfile.workspace = true
