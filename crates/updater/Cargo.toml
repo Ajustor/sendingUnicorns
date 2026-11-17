@@ -4,6 +4,8 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+# An app, not a library: never on crates.io.
+publish = false
 description = "Self-update from the release manifest published on GitHub Pages (shared with storingUnicorns and browsingUnicorns)."
 
 [dependencies]
